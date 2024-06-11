@@ -1,0 +1,11 @@
+*.png
+!*.drawio.png
+*.mp4
+pictures*/
+results*/
+*.exe
+*.out
+program
+*.o
+log*
+googletest/
