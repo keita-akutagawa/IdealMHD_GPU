@@ -1,5 +1,7 @@
 
+
 extern const double EPS;
+extern __constant__ double dEPS;
 extern const double PI;
 
 extern const double dx;
@@ -14,3 +16,4 @@ extern double dt;
 
 extern const int totalStep;
 extern double totalTime;
+
