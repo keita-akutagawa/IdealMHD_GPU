@@ -1,6 +1,7 @@
 #include "../const.hpp"
 
-const double EPS = 1e-20;
+const double EPS = 1e-40;
+__constant__ double dEPS = 1e-40;
 
 const double dx = 0.01;
 const double xmin = 0.0;

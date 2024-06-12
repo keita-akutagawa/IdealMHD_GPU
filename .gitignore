@@ -5,6 +5,8 @@ pictures*/
 results*/
 *.exe
 *.out
+*.exp
+*.lib
 program
 *.o
 log*

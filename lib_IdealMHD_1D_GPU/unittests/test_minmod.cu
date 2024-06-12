@@ -1,11 +1,8 @@
 #include "../minmod.hpp"
-#include <cuda_runtime.h>
 
 
 int main()
 {
-    const double EPS = 1e-40;
-    cudaMemcpyToSymbol(dEPS, &EPS, sizeof(double));
 
     thrust::host_vector<int> hVec1(3);
     hVec1[0] = 0;

@@ -1,18 +1,18 @@
 #!/bin/bash
 
-options="-lgtest -lgtest_main -pthread"
-programfile="../*.cpp"
+options=""
+programfile="../*.cu"
 testfiles=$(find . -name "test_*.cpp")
 
-constfile="test_const.cpp"
+constfile="test_const.cu"
 for testfile in $testfiles; do
 
     if [[ $(basename "$testfile") == "$constfile" ]]; then
         continue
     fi
 
-    g++ $testfile $constfile $programfile $options
-    ./a.out
+    nvcc $testfile $constfile $programfile $options
+    a.exe
 done
 
 

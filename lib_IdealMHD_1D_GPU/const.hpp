@@ -1,7 +1,7 @@
 
 
 extern const double EPS;
-extern __constant__ double dEPS;
+extern __device__ __constant__ double dEPS;
 extern const double PI;
 
 extern const double dx;
