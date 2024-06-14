@@ -1,4 +1,3 @@
-#include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <cmath>
 #include "const.hpp"

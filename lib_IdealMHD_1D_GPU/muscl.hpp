@@ -1,15 +1,18 @@
-#include <vector>
+#include <thrust/device_vector.h>
+#include "const.hpp"
+#include "minmod.hpp"
+
 
 class MUSCL
 {
 public:
     void getLeftComponent(
-        const std::vector<double> q, 
-        std::vector<double>& qLeft
+        const thrust::device_vector<double> q, 
+        thrust::device_vector<double>& qLeft
     );
     void getRightComponent(
-        const std::vector<double> q, 
-        std::vector<double>& qRight
+        const thrust::device_vector<double> q, 
+        thrust::device_vector<double>& qRight
     );
 };
 

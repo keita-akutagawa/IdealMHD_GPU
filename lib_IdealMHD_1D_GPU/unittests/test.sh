@@ -1,8 +1,8 @@
 #!/bin/bash
 
-options=""
+options="-rdc=true"
 programfile="../*.cu"
-testfiles=$(find . -name "test_*.cpp")
+testfiles=$(find . -name "test_*.cu")
 
 constfile="test_const.cu"
 for testfile in $testfiles; do

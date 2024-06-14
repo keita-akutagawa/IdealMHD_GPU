@@ -1,18 +1,31 @@
-#include <algorithm>
-#include <vector>
-#include "minmod.hpp"
-#include "const.hpp"
 #include "muscl.hpp"
+#include <thrust/transform.h>
 
+
+struct LeftComponentFunctor {
+    const thrust::device_vector<double>& q;
+
+    LeftComponentFunctor(const thrust::device_vector<double>& q) : q(q) {}
+
+    __host__ __device__
+    double operator()(const int& i) const {
+        return q[i] + 0.5 * minmod(q[i] - q[i-1], q[i+1] - q[i]);
+    }
+};
 
 void MUSCL::getLeftComponent(
-    const std::vector<double> q, 
-    std::vector<double>& qLeft
+    const thrust::device_vector<double> q, 
+    thrust::device_vector<double>& qLeft
 )
 {
-    for (int i = 1; i < nx-1; i++) {
-        qLeft[i] = q[i] + 0.5 * minmod(q[i] - q[i-1], q[i+1] - q[i]);
-    }
+    thrust::counting_iterator<int> indices(0);
+
+    thrust::transform(
+        indices + 1, 
+        indices + nx - 1, 
+        qLeft.begin() + 1, 
+        LeftComponentFunctor(q)
+    );
 
     //周期境界条件
     qLeft[0] = q[0] + 0.5 * minmod(
@@ -24,14 +37,30 @@ void MUSCL::getLeftComponent(
 }
 
 
+struct RightComponentFunctor {
+    const thrust::device_vector<double>& q;
+
+    LeftComponentFunctor(const thrust::device_vector<double>& q) : q(q) {}
+
+    __host__ __device__
+    double operator()(const int& i) const {
+        return q[i+1] - 0.5 * minmod(q[i+1] - q[i], q[i+2] - q[i+1]);
+    }
+};
+
 void MUSCL::getRightComponent(
-    const std::vector<double> q, 
-    std::vector<double>& qRight
+    const thrust::device_vector<double> q, 
+    thrust::device_vector<double>& qRight
 )
 {
-    for (int i = 0; i < nx-2; i++) {
-        qRight[i] = q[i+1] - 0.5 * minmod(q[i+1] - q[i], q[i+2] - q[i+1]);
-    }
+    thrust::counting_iterator<int> indices(0);
+
+    thrust::transform(
+        indices, 
+        indices + nx - 2, 
+        qRight.begin(), 
+        RightComponentFunctor(q)
+    );
 
     //周期境界条件
     qRight[nx-2] = q[nx-1] - 0.5 * minmod(

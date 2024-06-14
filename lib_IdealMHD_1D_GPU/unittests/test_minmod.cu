@@ -1,3 +1,4 @@
+#include <thrust/host_vector.h>
 #include "../minmod.hpp"
 
 
