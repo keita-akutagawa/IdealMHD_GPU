@@ -6,10 +6,13 @@
 #include "hlld.hpp"
 
 
-inline double HLLD::sign(double x)
-{
-    return (x > 0.0) - (x < 0.0);
-}
+struct Sign {
+
+    __host__ __device__
+    double operator()(const double& x) const {
+        return (x > 0.0) - (x < 0.0);
+    }
+};
 
 
 FanParameters::FanParameters()

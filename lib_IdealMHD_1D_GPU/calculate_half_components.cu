@@ -1,24 +1,9 @@
-#include <algorithm>
-#include <vector>
-#include "const.hpp"
 #include "calculate_half_components.hpp"
 
 
-Components::Components()
-{
-    rho = std::vector<double>(nx, 0.0);
-    u = std::vector<double>(nx, 0.0);
-    v = std::vector<double>(nx, 0.0);
-    w = std::vector<double>(nx, 0.0);
-    bx = std::vector<double>(nx, 0.0);
-    by = std::vector<double>(nx, 0.0);
-    bz = std::vector<double>(nx, 0.0);
-    p = std::vector<double>(nx, 0.0);
-}
-
 
 void CalculateHalfComponents::setPhysicalParameters(
-    const std::vector<std::vector<double>> U
+    const thrust::device_vector<thrust::device_vector<double>>& U
 )
 {
     double rho, u, v, w, bx, by, bz, e, p;

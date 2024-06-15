@@ -5,12 +5,7 @@
 
 class MUSCL
 {
-private:
-    thrust::device_vector<double> tmpQ1;
-    thrust::device_vector<double> tmpQ2;
-
 public:
-    MUSCL() : tmpQ1(nx), tmpQ2(nx) {}
 
     void getLeftComponent(
         const thrust::device_vector<double>& dQ, 

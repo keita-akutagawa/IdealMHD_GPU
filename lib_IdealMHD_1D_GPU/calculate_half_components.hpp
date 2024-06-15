@@ -1,4 +1,4 @@
-#include <vector>
+#include <thrust/device_vector.h>
 #include "const.hpp"
 #include "muscl.hpp"
 
@@ -6,16 +6,25 @@
 
 struct Components
 {
-    std::vector<double> rho;
-    std::vector<double> u;
-    std::vector<double> v;
-    std::vector<double> w;
-    std::vector<double> bx;
-    std::vector<double> by;
-    std::vector<double> bz;
-    std::vector<double> p;
+    thrust::device_vector<double> rho;
+    thrust::device_vector<double> u;
+    thrust::device_vector<double> v;
+    thrust::device_vector<double> w;
+    thrust::device_vector<double> bx;
+    thrust::device_vector<double> by;
+    thrust::device_vector<double> bz;
+    thrust::device_vector<double> p;
 
-    Components();
+    Components() : 
+        rho(nx, 0.0),
+        u(nx, 0.0),
+        v(nx, 0.0),
+        w(nx, 0.0),
+        bx(nx, 0.0),
+        by(nx, 0.0),
+        bz(nx, 0.0),
+        p(nx, 0.0)
+        {}
 };
 
 
@@ -31,7 +40,7 @@ private:
 public:
 
     void setPhysicalParameters(
-        const std::vector<std::vector<double>> U
+        const thrust::device_vector<thrust::device_vector<double>>& U
     );
 
     void calculateLeftComponents();

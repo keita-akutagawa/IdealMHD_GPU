@@ -1,4 +1,4 @@
-#include <vector>
+#include <thrust/device_vector.h>
 #include "const.hpp"
 #include "calculate_half_components.hpp"
 
