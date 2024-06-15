@@ -1,46 +1,56 @@
 #include "muscl.hpp"
+#include <thrust/adjacent_difference.h>
 #include <thrust/transform.h>
 
 
 struct LeftComponentFunctor {
-    const thrust::device_vector<double>& q;
-
-    LeftComponentFunctor(const thrust::device_vector<double>& q) : q(q) {}
+    MinMod minmod;
 
     __host__ __device__
-    double operator()(const int& i) const {
-        return q[i] + 0.5 * minmod(q[i] - q[i-1], q[i+1] - q[i]);
+    double operator()(const double q) const {
+        return q;
     }
 };
 
 void MUSCL::getLeftComponent(
-    const thrust::device_vector<double> q, 
+    const thrust::device_vector<double>& q, 
     thrust::device_vector<double>& qLeft
 )
 {
     thrust::counting_iterator<int> indices(0);
+    MinMod minmod;
 
-    thrust::transform(
-        indices + 1, 
-        indices + nx - 1, 
-        qLeft.begin() + 1, 
-        LeftComponentFunctor(q)
+    thrust::adjacent_difference(
+        q.begin(), 
+        q.end(), 
+        tmpQ.begin(), 
+        thrust::minus<double>()
     );
 
-    //周期境界条件
+    thrust::transform(
+        q.begin() + 1, 
+        q.end() - 1, 
+        qLeft.begin() + 1, 
+        LeftComponentFunctor()
+    );
+
+    // 周期境界条件
+    int nx = q.size();
     qLeft[0] = q[0] + 0.5 * minmod(
         q[0] - q[nx-1], q[1] - q[0]
-        );
+    );
     qLeft[nx-1] = q[nx-1] + 0.5 * minmod(
         q[nx-1] - q[nx-2], q[0] - q[nx-1]
-        );
+    );
 }
+
 
 
 struct RightComponentFunctor {
     const thrust::device_vector<double>& q;
+    MinMod minmod;
 
-    LeftComponentFunctor(const thrust::device_vector<double>& q) : q(q) {}
+    RightComponentFunctor(const thrust::device_vector<double>& q) : q(q) {}
 
     __host__ __device__
     double operator()(const int& i) const {
@@ -49,11 +59,12 @@ struct RightComponentFunctor {
 };
 
 void MUSCL::getRightComponent(
-    const thrust::device_vector<double> q, 
+    const thrust::device_vector<double>& q, 
     thrust::device_vector<double>& qRight
 )
 {
     thrust::counting_iterator<int> indices(0);
+    MinMod minmod;
 
     thrust::transform(
         indices, 
