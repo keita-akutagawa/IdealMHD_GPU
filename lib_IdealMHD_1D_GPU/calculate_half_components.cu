@@ -6,6 +6,9 @@ void CalculateHalfComponents::setPhysicalParameters(
     const thrust::device_vector<thrust::device_vector<double>>& U
 )
 {
+    auto tupleForLeft = thrust::make_tuple(U[0].begin());
+    auto tupleForLeftIterator = thrust::make_zip_iterator(tupleForLeft);
+
     double rho, u, v, w, bx, by, bz, e, p;
 
     for (int i = 0; i < nx; i++) {
