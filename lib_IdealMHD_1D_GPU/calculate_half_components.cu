@@ -2,49 +2,17 @@
 
 
 
+
+
+
 void CalculateHalfComponents::setPhysicalParameters(
-    const thrust::device_vector<thrust::device_vector<double>>& U
+    const thrust::device_vector<ConservationParameter>& U
 )
 {
-    auto tupleForLeft = thrust::make_tuple(U[0].begin());
+    auto tupleForLeft = thrust::make_tuple(U.begin());
     auto tupleForLeftIterator = thrust::make_zip_iterator(tupleForLeft);
 
-    double rho, u, v, w, bx, by, bz, e, p;
-
-    for (int i = 0; i < nx; i++) {
-        rho = U[0][i];
-
-        //U[1] = rho * u
-        u = U[1][i] / rho;
-
-        //U[2] = rho * v
-        v = U[2][i] / rho;
-
-        //U[3] = rho * w
-        w = U[3][i] / rho;
-
-        bx = U[4][i];
-        by = U[5][i];
-        bz = U[6][i];
-
-        //U[7] = e
-        e = U[7][i];
-        p = (gamma_mhd - 1.0)
-          * (e
-          - 0.5 * rho * (u * u + v * v + w * w)
-          - 0.5 * (bx * bx + by * by + bz * bz)
-          );
-        
-
-        componentsCenter.rho[i] = rho;
-        componentsCenter.u[i] = u;
-        componentsCenter.v[i] = v;
-        componentsCenter.w[i] = w;
-        componentsCenter.bx[i] = bx;
-        componentsCenter.by[i] = by;
-        componentsCenter.bz[i] = bz;
-        componentsCenter.p[i] = p;
-    }
+    
 }
 
 
@@ -80,20 +48,20 @@ void CalculateHalfComponents::calculateRightComponents()
 }
 
 
-Components CalculateHalfComponents::getCenterComponents()
+thrust::device_vector<BasicParameter> CalculateHalfComponents::getCenterComponents()
 {
-    return componentsCenter;
+    return qCenter;
 }
 
 
-Components CalculateHalfComponents::getLeftComponents()
+thrust::device_vector<BasicParameter> CalculateHalfComponents::getLeftComponents()
 {
-    return componentsLeft;
+    return qLeft;
 }
 
 
-Components CalculateHalfComponents::getRightComponents()
+thrust::device_vector<BasicParameter> CalculateHalfComponents::getRightComponents()
 {
-    return componentsRight;
+    return qRight;
 }
 
