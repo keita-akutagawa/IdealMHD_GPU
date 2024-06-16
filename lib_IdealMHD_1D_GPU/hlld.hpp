@@ -1,99 +1,45 @@
 #include <thrust/device_vector.h>
 #include "const.hpp"
-#include "calculate_half_components.hpp"
-
-
-class CalculateHalfComponents;
-
-
-struct FanParameters
-{
-    std::vector<double> rho;
-    std::vector<double> u;
-    std::vector<double> v;
-    std::vector<double> w;
-    std::vector<double> bx;
-    std::vector<double> by;
-    std::vector<double> bz;
-    std::vector<double> e;
-    std::vector<double> pT;
-
-    FanParameters();
-};
-
-struct HLLDParameters
-{
-    std::vector<double> pT;
-    std::vector<double> pT1;
-    std::vector<double> pT2;
-    std::vector<double> e;
-    std::vector<double> cs;
-    std::vector<double> ca;
-    std::vector<double> va;
-    std::vector<double> cf;
-    std::vector<double> S;
-    std::vector<double> S1;
-    std::vector<double> SM;
-
-    HLLDParameters();
-};
-
-struct Flux
-{
-    std::vector<std::vector<double>> flux;
-
-    Flux();
-};
-
-
+#include "calculate_half_Q.hpp"
+#include "fan_parameter_struct.hpp"
+#include "hlld_parameter_struct.hpp"
+#include "flux_struct.hpp"
 
 
 class HLLD
 {
 private:
-    CalculateHalfComponents calculateHalfComponents;
-    Components componentsCenter;
-    Components componentsLeft;
-    Components componentsRight;
-    FanParameters outerLeftFanParameters;
-    FanParameters outerRightFanParameters;
-    FanParameters middleLeftFanParameters;
-    FanParameters middleRightFanParameters;
-    FanParameters innerLeftFanParameters;
-    FanParameters innerRightFanParameters;
-    HLLDParameters hLLDLeftParameters;
-    HLLDParameters hLLDRightParameters;
+    CalculateHalfQ calculateHalfQ;
 
-    Flux flux;
-    Flux fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
-    Flux fluxOuterRight, fluxMiddleRight, fluxInnerRight;
+    thrust::device_vector<BasicParameter> dQCenter;
+    thrust::device_vector<BasicParameter> dQLeft;
+    thrust::device_vector<BasicParameter> dQRight;
+    thrust::device_vector<FanParameter> outerLeftFanParameter;
+    thrust::device_vector<FanParameter> outerRightFanParameter;
+    thrust::device_vector<FanParameter> middleLeftFanParameter;
+    thrust::device_vector<FanParameter> middleRightFanParameter;
+    thrust::device_vector<FanParameter> innerLeftFanParameter;
+    thrust::device_vector<FanParameter> innerRightFanParameter;
+    thrust::device_vector<HLLDParameter> hLLDLeftParameter;
+    thrust::device_vector<HLLDParameter> hLLDRightParameter;
+
+    thrust::device_vector<Flux> flux;
+    thrust::device_vector<Flux> fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
+    thrust::device_vector<Flux> fluxOuterRight, fluxMiddleRight, fluxInnerRight;
 
 public:
 
     void calculateFlux(
-        const std::vector<std::vector<double>> U
+        const thrust::device_vector<ConservationParameter>& U
     );
 
-    Components getLeftComponents();
-    Components getRightComponents();
-
-    FanParameters getOuterLeftFanParameters();
-    FanParameters getOuterRightFanParameters();
-    FanParameters getMiddleLeftFanParameters();
-    FanParameters getMiddleRightFanParameters();
-    FanParameters getInnerLeftFanParameters();
-    FanParameters getInnerRightFanParameters();
-
-    HLLDParameters getHLLDLeftParameters();
-    HLLDParameters getHLLDRightParameters();
-
-    Flux getFlux();
+    thrust::device_vector<Flux> getFlux();
 
 private:
     double sign(double x);
 
     void setComponents(
-        const std::vector<std::vector<double>> U
+        const thrust::device_vector<ConservationParameter>& U
     );
 
     void calculateHLLDParametersForOuterFan();
@@ -103,27 +49,27 @@ private:
     void calculateHLLDParametersForInnerFan();
 
     void setFanParametersFromComponents(
-        const Components components, 
-        FanParameters& fanParameters
+        const thrust::device_vector<BasicParameter>& dQ, 
+        thrust::device_vector<FanParameter>& fanParameter
     );
 
     void calculateHLLDSubParametersForMiddleFan(
-        const Components components, 
-        const FanParameters outerFanParameters, 
-        HLLDParameters& hLLDParameters
+        const thrust::device_vector<BasicParameter>& components, 
+        const thrust::device_vector<FanParameter>& outerFanParameter, 
+        thrust::device_vector<HLLDParameter>& hLLDParameter
     );
 
     void calculateHLLDParameters1(
-        const FanParameters outerFanParameters, 
-        const HLLDParameters hLLDParameters, 
-        FanParameters& middleFanParameters
+        const thrust::device_vector<FanParameter>& outerFanParameter, 
+        const thrust::device_vector<HLLDParameter>& hLLDParameter, 
+        thrust::device_vector<FanParameter>& middleFanParameter
     );
 
     void calculateHLLDParameters2();
 
     void setFlux(
-        const FanParameters fanParameters, 
-        Flux& flux
+        const thrust::device_vector<FanParameter>& fanParameter, 
+        thrust::device_vector<Flux>& flux
     );
 };
 

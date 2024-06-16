@@ -1,10 +1,9 @@
-#include "calculate_half_components.hpp"
+#include "calculate_half_Q.hpp"
 
 
 struct GetBasicParamterFunctor {
-    MinMod minmod;
 
-    __host__ __device__
+    __device__
     BasicParameter operator()(const ConservationParameter& conservationParameter) const {
         BasicParameter dQ;        
         double rho, u, v, w, bX, bY, bZ, e, p;
@@ -34,47 +33,44 @@ struct GetBasicParamterFunctor {
     }
 };
 
-void CalculateHalfComponents::setPhysicalParameters(
+void CalculateHalfQ::setPhysicalParameters(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    auto tupleOfBasicParamter = thrust::make_tuple(U.begin());
-    auto tupleOfBasicParameterIterator = thrust::make_zip_iterator(tupleOfBasicParamter);
-
     thrust::transform(
-        tupleOfBasicParameterIterator, 
-        tupleOfBasicParameterIterator + nx, 
+        U.begin(), 
+        U.end(),  
         dQCenter.begin(),
         GetBasicParamterFunctor()
     );
 }
 
 
-void CalculateHalfComponents::calculateLeftComponents()
+void CalculateHalfQ::calculateLeftQ()
 { 
     muscl.getLeftComponent(dQCenter, dQLeft);
 }
 
 
-void CalculateHalfComponents::calculateRightComponents()
+void CalculateHalfQ::calculateRightQ()
 { 
     muscl.getRightComponent(dQCenter, dQRight);
 }
 
 
-thrust::device_vector<BasicParameter> CalculateHalfComponents::getCenterComponents()
+thrust::device_vector<BasicParameter> CalculateHalfQ::getCenterQ()
 {
     return dQCenter;
 }
 
 
-thrust::device_vector<BasicParameter> CalculateHalfComponents::getLeftComponents()
+thrust::device_vector<BasicParameter> CalculateHalfQ::getLeftQ()
 {
     return dQLeft;
 }
 
 
-thrust::device_vector<BasicParameter> CalculateHalfComponents::getRightComponents()
+thrust::device_vector<BasicParameter> CalculateHalfQ::getRightQ()
 {
     return dQRight;
 }

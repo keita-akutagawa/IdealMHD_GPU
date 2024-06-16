@@ -8,51 +8,15 @@
 
 struct Sign {
 
-    __host__ __device__
+    __device__
     double operator()(const double& x) const {
         return (x > 0.0) - (x < 0.0);
     }
 };
 
 
-FanParameters::FanParameters()
-{
-    rho = std::vector<double>(nx, 0.0);
-    u = std::vector<double>(nx, 0.0);
-    v = std::vector<double>(nx, 0.0);
-    w = std::vector<double>(nx, 0.0);
-    bx = std::vector<double>(nx, 0.0);
-    by = std::vector<double>(nx, 0.0);
-    bz = std::vector<double>(nx, 0.0);
-    e = std::vector<double>(nx, 0.0);
-    pT = std::vector<double>(nx, 0.0);
-}
-
-
-HLLDParameters::HLLDParameters()
-{
-    pT = std::vector<double>(nx, 0.0);
-    pT1 = std::vector<double>(nx, 0.0);
-    pT2 = std::vector<double>(nx, 0.0);
-    e = std::vector<double>(nx, 0.0);
-    cs = std::vector<double>(nx, 0.0);
-    ca = std::vector<double>(nx, 0.0);
-    va = std::vector<double>(nx, 0.0);
-    cf = std::vector<double>(nx, 0.0);
-    S = std::vector<double>(nx, 0.0);
-    S1 = std::vector<double>(nx, 0.0);
-    SM = std::vector<double>(nx, 0.0);
-}
-
-
-Flux::Flux()
-{
-    flux = std::vector(8, std::vector<double>(nx, 0.0));
-}
-
-
 void HLLD::calculateFlux(
-    const std::vector<std::vector<double>> U
+    const thrust::device_vector<ConservationParameter>& U
 )
 {
     setComponents(U);
@@ -60,12 +24,12 @@ void HLLD::calculateFlux(
     calculateHLLDParametersForMiddleFan();
     calculateHLLDParametersForInnerFan();
 
-    setFlux(outerLeftFanParameters, fluxOuterLeft);
-    setFlux(outerRightFanParameters, fluxOuterRight);
-    setFlux(middleLeftFanParameters, fluxMiddleLeft);
-    setFlux(middleRightFanParameters, fluxMiddleRight);
-    setFlux(innerLeftFanParameters, fluxInnerLeft);
-    setFlux(innerRightFanParameters, fluxInnerRight);
+    setFlux(outerLeftFanParameter, fluxOuterLeft);
+    setFlux(outerRightFanParameter, fluxOuterRight);
+    setFlux(middleLeftFanParameter, fluxMiddleLeft);
+    setFlux(middleRightFanParameter, fluxMiddleRight);
+    setFlux(innerLeftFanParameter, fluxInnerLeft);
+    setFlux(innerRightFanParameter, fluxInnerRight);
 
     double SL, SR, S1L, S1R, SM;
     for (int comp = 0; comp < 8; comp++) {
@@ -88,26 +52,26 @@ void HLLD::calculateFlux(
 
 
 void HLLD::setComponents(
-    const std::vector<std::vector<double>> U
+    const thrust::device_vector<ConservationParameter>& U
 )
 {
-    calculateHalfComponents.setPhysicalParameters(U);
-    calculateHalfComponents.calculateLeftComponents();
-    calculateHalfComponents.calculateRightComponents();
+    calculateHalfQ.setPhysicalParameters(U);
+    calculateHalfQ.calculateLeftQ();
+    calculateHalfQ.calculateRightQ();
 
-    componentsCenter = calculateHalfComponents.getCenterComponents();
-    componentsLeft = calculateHalfComponents.getLeftComponents();
-    componentsRight = calculateHalfComponents.getRightComponents();
+    dQCenter = calculateHalfQ.getCenterQ();
+    dQLeft = calculateHalfQ.getLeftQ();
+    dQRight = calculateHalfQ.getRightQ();
 }
 
 
 void HLLD::calculateHLLDParametersForOuterFan()
 {
     setFanParametersFromComponents(
-        componentsLeft, outerLeftFanParameters
+        dQLeft, outerLeftFanParameter
     );
     setFanParametersFromComponents(
-        componentsRight, outerRightFanParameters
+        dQRight, outerRightFanParameter
     );
 }
 
@@ -115,14 +79,14 @@ void HLLD::calculateHLLDParametersForOuterFan()
 void HLLD::calculateHLLDParametersForMiddleFan()
 {
     calculateHLLDSubParametersForMiddleFan(
-        componentsLeft, 
-        outerLeftFanParameters, 
-        hLLDLeftParameters
+        dQLeft, 
+        outerLeftFanParameter, 
+        hLLDLeftParameter
     );
     calculateHLLDSubParametersForMiddleFan(
-        componentsRight, 
-        outerRightFanParameters, 
-        hLLDRightParameters
+        dQRight, 
+        outerRightFanParameter, 
+        hLLDRightParameter
     );
 
     double SL, SR, SM, pT1, pTL, pTR;
@@ -160,14 +124,14 @@ void HLLD::calculateHLLDParametersForMiddleFan()
     }
 
     calculateHLLDParameters1(
-        outerLeftFanParameters, 
-        hLLDLeftParameters, 
-        middleLeftFanParameters
+        outerLeftFanParameter, 
+        hLLDLeftParameter, 
+        middleLeftFanParameter
     );
     calculateHLLDParameters1(
-        outerRightFanParameters, 
-        hLLDRightParameters, 
-        middleRightFanParameters
+        outerRightFanParameter, 
+        hLLDRightParameter, 
+        middleRightFanParameter
     );
 }
 
@@ -194,8 +158,8 @@ void HLLD::calculateHLLDParametersForInnerFan()
 
 
 void HLLD::setFanParametersFromComponents(
-    const Components components, 
-    FanParameters& fanParameters
+    const thrust::device_vector<BasicParameter>& dQ, 
+    thrust::device_vector<FanParameter>& fanParameter
 )
 {
     double rho, u, v, w, bx, by, bz, p, e, pT;
@@ -227,9 +191,9 @@ void HLLD::setFanParametersFromComponents(
 
 
 void HLLD::calculateHLLDSubParametersForMiddleFan(
-    const Components components,
-    const FanParameters outerFanParameters, 
-    HLLDParameters& hLLDParameters
+    const thrust::device_vector<BasicParameter>& components, 
+    const thrust::device_vector<FanParameter>& outerFanParameter, 
+    thrust::device_vector<HLLDParameter>& hLLDParameter
 )
 {
     double rho, bx, by, bz, e, pT, p;
@@ -262,9 +226,9 @@ void HLLD::calculateHLLDSubParametersForMiddleFan(
 
 
 void HLLD::calculateHLLDParameters1(
-    const FanParameters outerFanParameters, 
-    const HLLDParameters hlldParameters, 
-    FanParameters& middleFanParameters
+    const thrust::device_vector<FanParameter>& outerFanParameter, 
+    const thrust::device_vector<HLLDParameter>& hLLDParameter, 
+    thrust::device_vector<FanParameter>& middleFanParameter
 )
 {
     double rho, u, v, w, bx, by, bz, e, pT, pT1, S, SM;
@@ -393,8 +357,8 @@ void HLLD::calculateHLLDParameters2()
 
 
 void HLLD::setFlux(
-    const FanParameters fanParameters, 
-    Flux& flux
+    const thrust::device_vector<FanParameter>& fanParameter, 
+    thrust::device_vector<Flux>& flux
 )
 {
     double rho, u, v, w, bx, by, bz, e;
@@ -421,59 +385,10 @@ void HLLD::setFlux(
     }
 }
 
-// getter
 
-Components HLLD::getLeftComponents()
-{
-    return componentsLeft;
-}
+//getter
 
-Components HLLD::getRightComponents()
-{
-    return componentsRight;
-}
-
-FanParameters HLLD::getOuterLeftFanParameters()
-{
-    return outerLeftFanParameters;
-}
-
-FanParameters HLLD::getOuterRightFanParameters()
-{
-    return outerRightFanParameters;
-}
-
-FanParameters HLLD::getMiddleLeftFanParameters()
-{
-    return middleLeftFanParameters;
-}
-
-FanParameters HLLD::getMiddleRightFanParameters()
-{
-    return middleRightFanParameters;
-}
-
-FanParameters HLLD::getInnerLeftFanParameters()
-{
-    return innerLeftFanParameters;
-}
-
-FanParameters HLLD::getInnerRightFanParameters()
-{
-    return innerRightFanParameters;
-}
-
-HLLDParameters HLLD::getHLLDLeftParameters()
-{
-    return hLLDLeftParameters;
-}
-
-HLLDParameters HLLD::getHLLDRightParameters()
-{
-    return hLLDRightParameters;
-}
-
-Flux HLLD::getFlux()
+thrust::device_vector<Flux> HLLD::getFlux()
 {
     return flux;
 }

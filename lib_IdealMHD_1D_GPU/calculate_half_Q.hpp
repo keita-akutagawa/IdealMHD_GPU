@@ -6,7 +6,7 @@
 
 
 
-class CalculateHalfComponents
+class CalculateHalfQ
 {
 private:
     thrust::device_vector<BasicParameter> dQCenter;
@@ -21,14 +21,14 @@ public:
         const thrust::device_vector<ConservationParameter>& U
     );
 
-    void calculateLeftComponents();
+    void calculateLeftQ();
 
-    void calculateRightComponents();
+    void calculateRightQ();
 
-    thrust::device_vector<BasicParameter> getCenterComponents();
+    thrust::device_vector<BasicParameter> getCenterQ();
 
-    thrust::device_vector<BasicParameter> getLeftComponents();
+    thrust::device_vector<BasicParameter> getLeftQ();
 
-    thrust::device_vector<BasicParameter> getRightComponents();
+    thrust::device_vector<BasicParameter> getRightQ();
 };
 

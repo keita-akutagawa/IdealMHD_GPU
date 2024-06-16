@@ -7,7 +7,7 @@
 struct LeftParameterFunctor {
     MinMod minmod;
 
-    __host__ __device__
+    __device__
     BasicParameter operator()(const thrust::tuple<BasicParameter, BasicParameter, BasicParameter>& tupleForLeft) const {
         BasicParameter dQMinus1 = thrust::get<0>(tupleForLeft);
         BasicParameter dQ = thrust::get<1>(tupleForLeft);
@@ -50,7 +50,7 @@ void MUSCL::getLeftComponent(
 struct RightParameterFunctor {
     MinMod minmod;
 
-    __host__ __device__
+    __device__
     BasicParameter operator()(const thrust::tuple<BasicParameter, BasicParameter, BasicParameter>& tupleForRight) const {
         BasicParameter dQ = thrust::get<0>(tupleForRight);
         BasicParameter dQPlus1 = thrust::get<1>(tupleForRight);
