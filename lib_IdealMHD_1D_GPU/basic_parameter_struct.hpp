@@ -13,6 +13,7 @@ struct BasicParameter
     double bZ;
     double p;
 
+    __host__ __device__
     BasicParameter() : 
         rho(0.0), 
         u(0.0), 

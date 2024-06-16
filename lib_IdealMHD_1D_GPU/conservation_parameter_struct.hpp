@@ -13,6 +13,7 @@ struct ConservationParameter
     double bZ;
     double e;
 
+    __host__ __device__
     ConservationParameter() : 
         rho(0.0), 
         rhoU(0.0), 
