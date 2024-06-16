@@ -4,7 +4,7 @@
 #include <thrust/tuple.h>
 
 
-struct LeftComponentFunctor {
+struct LeftParameterFunctor {
     MinMod minmod;
 
     __host__ __device__
@@ -41,13 +41,13 @@ void MUSCL::getLeftComponent(
         tupleForLeftIterator + 1, 
         tupleForLeftIterator + nx - 1, 
         dQLeft.begin() + 1,
-        LeftComponentFunctor()
+        LeftParameterFunctor()
     );
 }
 
 
 
-struct RightComponentFunctor {
+struct RightParameterFunctor {
     MinMod minmod;
 
     __host__ __device__
@@ -85,7 +85,7 @@ void MUSCL::getRightComponent(
         tupleForRightIterator, 
         tupleForRightIterator + nx - 2, 
         dQRight.begin(),
-        RightComponentFunctor()
+        RightParameterFunctor()
     );
 }
 

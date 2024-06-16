@@ -9,9 +9,9 @@
 class CalculateHalfComponents
 {
 private:
-    thrust::device_vector<BasicParameter> qCenter;
-    thrust::device_vector<BasicParameter> qLeft;
-    thrust::device_vector<BasicParameter> qRight;
+    thrust::device_vector<BasicParameter> dQCenter;
+    thrust::device_vector<BasicParameter> dQLeft;
+    thrust::device_vector<BasicParameter> dQRight;
 
     MUSCL muscl;
 
