@@ -9,8 +9,8 @@ struct LeftParameterFunctor {
     __device__
     BasicParameter operator()(const thrust::tuple<BasicParameter, BasicParameter, BasicParameter>& tupleForLeft) const {
         BasicParameter dQMinus1 = thrust::get<0>(tupleForLeft);
-        BasicParameter dQ = thrust::get<1>(tupleForLeft);
-        BasicParameter dQPlus1 = thrust::get<2>(tupleForLeft);
+        BasicParameter dQ       = thrust::get<1>(tupleForLeft);
+        BasicParameter dQPlus1  = thrust::get<2>(tupleForLeft);
 
         BasicParameter dQLeft;
 
@@ -51,7 +51,7 @@ struct RightParameterFunctor {
 
     __device__
     BasicParameter operator()(const thrust::tuple<BasicParameter, BasicParameter, BasicParameter>& tupleForRight) const {
-        BasicParameter dQ = thrust::get<0>(tupleForRight);
+        BasicParameter dQ      = thrust::get<0>(tupleForRight);
         BasicParameter dQPlus1 = thrust::get<1>(tupleForRight);
         BasicParameter dQPlus2 = thrust::get<2>(tupleForRight);
 
