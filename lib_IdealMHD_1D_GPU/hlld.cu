@@ -227,37 +227,55 @@ void HLLD::calculateHLLDParametersForInnerFan()
 }
 
 
+struct setFanParameterFunctor {
+
+    __device__
+    FanParameter operator()(const BasicParameter dQ) const {
+        FanParameter fanParameter;
+        double rho, u, v, w, bX, bY, bZ, e, p, pT;
+
+        rho = dQ.rho;
+        u = dQ.u;
+        v = dQ.v;
+        w = dQ.w;
+        bX = dQ.bX;
+        bY = dQ.bY;
+        bZ = dQ.bZ;
+        p = dQ.p;
+        e = p / (gamma_mhd - 1.0)
+          + 0.5 * rho * (u * u + v * v + w * w)
+          + 0.5 * (bX * bX + bY * bY + bZ * bZ); 
+        pT = p + 0.5 * (bX * bX + bY * bY + bZ * bZ);
+
+        fanParameter.rho = rho;
+        fanParameter.u = u;
+        fanParameter.v = v;
+        fanParameter.w = w;
+        fanParameter.bX = bX;
+        fanParameter.bY = bY;
+        fanParameter.bZ = bZ;
+        fanParameter.e = e;
+        fanParameter.pT = pT;
+
+        return fanParameter;
+    }
+};
+
 void HLLD::setFanParametersFromComponents(
     const thrust::device_vector<BasicParameter>& dQ, 
     thrust::device_vector<FanParameter>& fanParameter
 )
 {
-    double rho, u, v, w, bx, by, bz, p, e, pT;
-    for (int i = 0; i < nx; i++) {
-        rho = components.rho[i];
-        u = components.u[i];
-        v = components.v[i];
-        w = components.w[i];
-        bx = components.bx[i];
-        by = components.by[i];
-        bz = components.bz[i];
-        p = components.p[i];
-        e = p / (gamma_mhd - 1.0)
-          + 0.5 * rho * (u * u + v * v + w * w)
-          + 0.5 * (bx * bx + by * by + bz * bz); 
-        pT = p + 0.5 * (bx * bx + by * by + bz * bz);
-        
-        fanParameters.rho[i] = rho;
-        fanParameters.u[i] = u;
-        fanParameters.v[i] = v;
-        fanParameters.w[i] = w;
-        fanParameters.bx[i] = bx;
-        fanParameters.by[i] = by;
-        fanParameters.bz[i] = bz;
-        fanParameters.e[i] = e;
-        fanParameters.pT[i] = pT;
-    }
+    thrust::transform(
+        dQ.begin(), 
+        dQ.end(), 
+        fanParameter.begin(), 
+        setFanParameterFunctor()
+    );
 }
+
+
+
 
 
 void HLLD::calculateHLLDSubParametersForMiddleFan(
