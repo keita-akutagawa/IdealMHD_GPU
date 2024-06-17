@@ -1,5 +1,4 @@
 #include "muscl.hpp"
-#include <thrust/adjacent_difference.h>
 #include <thrust/transform.h>
 #include <thrust/tuple.h>
 

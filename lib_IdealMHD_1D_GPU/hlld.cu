@@ -1,9 +1,7 @@
-#include <vector>
-#include <cmath>
-#include <iostream>
-#include <algorithm>
 #include "const.hpp"
 #include "hlld.hpp"
+#include <thrust/transform.h>
+#include <thrust/tuple.h>
 
 
 struct Sign {
@@ -11,6 +9,82 @@ struct Sign {
     __device__
     double operator()(const double& x) const {
         return (x > 0.0) - (x < 0.0);
+    }
+};
+
+
+struct CalculateFluxFunctor {
+
+    __device__
+    Flux operator()(
+        const thrust::tuple<
+        HLLDParameter, HLLDParameter, 
+        Flux, Flux, Flux, 
+        Flux, Flux, Flux
+        >& tupleForFlux) const {
+            HLLDParameter hLLDLeftParameter = thrust::get<0>(tupleForFlux);
+            HLLDParameter hLLDRightParameter = thrust::get<1>(tupleForFlux);
+            Flux fluxOuterLeft = thrust::get<2>(tupleForFlux);
+            Flux fluxMiddleLeft = thrust::get<3>(tupleForFlux);
+            Flux fluxInnerLeft = thrust::get<4>(tupleForFlux);
+            Flux fluxOuterRight = thrust::get<5>(tupleForFlux);
+            Flux fluxMiddleRight = thrust::get<6>(tupleForFlux);
+            Flux fluxInnerRight = thrust::get<7>(tupleForFlux);
+
+            Flux flux;
+
+            double SL = hLLDLeftParameter.S;
+            double S1L = hLLDLeftParameter.S1;
+            double SM = hLLDLeftParameter.SM; //hLLDRightParametersでもOK
+            double SR = hLLDRightParameter.S;
+            double S1R = hLLDRightParameter.S1;
+
+            auto calculateFluxComponent = [&](
+                double outerLeft, double middleLeft, double innerLeft,
+                double outerRight, double middleRight, double innerRight
+            ) {
+                return outerLeft * (SL > 0.0)
+                     + middleLeft * ((SL <= 0.0) && (0.0 < S1L))
+                     + innerLeft * ((S1L <= 0.0) && (0.0 < SM))
+                     + outerRight * (SR <= 0.0)
+                     + middleRight * ((S1R <= 0.0) && (0.0 < SR))
+                     + innerRight * ((SM <= 0.0) && (0.0 < S1R));
+            };
+
+            flux.f0 = calculateFluxComponent(
+                fluxOuterLeft.f0, fluxMiddleLeft.f0, fluxInnerLeft.f0, 
+                fluxOuterRight.f0, fluxMiddleRight.f0, fluxInnerRight.f0
+            );
+
+            flux.f1 = calculateFluxComponent(
+                fluxOuterLeft.f1, fluxMiddleLeft.f1, fluxInnerLeft.f1,
+                fluxOuterRight.f1, fluxMiddleRight.f1, fluxInnerRight.f1);
+
+            flux.f2 = calculateFluxComponent(
+                fluxOuterLeft.f2, fluxMiddleLeft.f2, fluxInnerLeft.f2,
+                fluxOuterRight.f2, fluxMiddleRight.f2, fluxInnerRight.f2);
+
+            flux.f3 = calculateFluxComponent(
+                fluxOuterLeft.f3, fluxMiddleLeft.f3, fluxInnerLeft.f3,
+                fluxOuterRight.f3, fluxMiddleRight.f3, fluxInnerRight.f3);
+
+            flux.f4 = calculateFluxComponent(
+                fluxOuterLeft.f4, fluxMiddleLeft.f4, fluxInnerLeft.f4,
+                fluxOuterRight.f4, fluxMiddleRight.f4, fluxInnerRight.f4);
+
+            flux.f5 = calculateFluxComponent(
+                fluxOuterLeft.f5, fluxMiddleLeft.f5, fluxInnerLeft.f5,
+                fluxOuterRight.f5, fluxMiddleRight.f5, fluxInnerRight.f5);
+
+            flux.f6 = calculateFluxComponent(
+                fluxOuterLeft.f6, fluxMiddleLeft.f6, fluxInnerLeft.f6,
+                fluxOuterRight.f6, fluxMiddleRight.f6, fluxInnerRight.f6);
+
+            flux.f7 = calculateFluxComponent(
+                fluxOuterLeft.f7, fluxMiddleLeft.f7, fluxInnerLeft.f7,
+                fluxOuterRight.f7, fluxMiddleRight.f7, fluxInnerRight.f7);
+
+            return flux;
     }
 };
 
@@ -31,23 +105,19 @@ void HLLD::calculateFlux(
     setFlux(innerLeftFanParameter, fluxInnerLeft);
     setFlux(innerRightFanParameter, fluxInnerRight);
 
-    double SL, SR, S1L, S1R, SM;
-    for (int comp = 0; comp < 8; comp++) {
-        for (int i = 0; i < nx; i++) {
-            SL = hLLDLeftParameters.S[i];
-            S1L = hLLDLeftParameters.S1[i];
-            SM = hLLDLeftParameters.SM[i]; //hLLDRightParametersでもOK
-            SR = hLLDRightParameters.S[i];
-            S1R = hLLDRightParameters.S1[i];
+    auto tupleForFlux = thrust::make_tuple(
+        hLLDLeftParameter.begin(), hLLDRightParameter.begin(), 
+        fluxOuterLeft.begin(), fluxMiddleLeft.begin(), fluxInnerLeft.begin(), 
+        fluxOuterRight.begin(), fluxMiddleRight.begin(), fluxInnerRight.begin()
+    );
+    auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
 
-            flux.flux[comp][i] = fluxOuterLeft.flux[comp][i] * (SL > 0.0)
-                               + fluxMiddleLeft.flux[comp][i] * ((SL <= 0.0) && (0.0 < S1L))
-                               + fluxInnerLeft.flux[comp][i] * ((S1L <= 0.0) && (0.0 < SM))
-                               + fluxOuterRight.flux[comp][i] * (SR <= 0.0)
-                               + fluxMiddleRight.flux[comp][i] * ((S1R <= 0.0) && (0.0 < SR))
-                               + fluxInnerRight.flux[comp][i] * ((SM <= 0.0) && (0.0 < S1R));
-        }
-    }
+    thrust::transform(
+        tupleForFluxIterator, 
+        tupleForFluxIterator + nx, 
+        flux.begin(), 
+        CalculateFluxFunctor()
+    );
 }
 
 

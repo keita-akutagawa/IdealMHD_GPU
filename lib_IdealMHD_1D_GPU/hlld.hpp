@@ -36,7 +36,6 @@ public:
     thrust::device_vector<Flux> getFlux();
 
 private:
-    double sign(double x);
 
     void setComponents(
         const thrust::device_vector<ConservationParameter>& U
