@@ -5,7 +5,7 @@
 
 struct MinMod
 {
-    __host__ __device__
+    __device__
     double operator()(const double& x, const double& y) const
     {
         int sign_x = (x > 0) - (x < 0);

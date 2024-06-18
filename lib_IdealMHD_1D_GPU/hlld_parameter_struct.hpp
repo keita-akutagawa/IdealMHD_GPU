@@ -6,7 +6,6 @@ struct HLLDParameter
 {
     double pT;
     double pT1;
-    double pT2;
     double e;
     double cs;
     double ca;
@@ -20,7 +19,6 @@ struct HLLDParameter
     HLLDParameter() :
         pT(0.0), 
         pT1(0.0), 
-        pT2(0.0), 
         e(0.0), 
         cs(0.0), 
         ca(0.0), 
