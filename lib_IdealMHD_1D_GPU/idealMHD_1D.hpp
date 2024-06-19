@@ -1,4 +1,5 @@
-#include <vector>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <string>
 #include "flux_solver.hpp"
 #include "boundary.hpp"
@@ -8,17 +9,15 @@ class IdealMHD1D
 {
 private:
     FluxSolver fluxSolver;
-    Flux fluxF;
-    std::vector<std::vector<double>> U;
-    std::vector<std::vector<double>> UBar;
+    thrust::device_vector<Flux> fluxF;
+    thrust::device_vector<ConservationParameter> U;
+    thrust::device_vector<ConservationParameter> UBar;
     Boundary boundary;
+    thrust::host_vector<ConservationParameter> hU;
 
 public:
-    IdealMHD1D();
 
-    void initializeU(
-        const std::vector<std::vector<double>> UInit
-    ); 
+    virtual void initializeU(); 
 
     void oneStepRK2();
 
@@ -28,7 +27,7 @@ public:
         int step
     );
 
-    std::vector<std::vector<double>> getU();
+    thrust::device_vector<ConservationParameter> getU();
 
     void calculateDt();
 };
