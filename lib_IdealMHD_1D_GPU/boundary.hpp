@@ -1,5 +1,6 @@
-#include <vector>
-#include <string>
+#include <thrust/device_vector.h>
+#include "const.hpp"
+#include "conservation_parameter_struct.hpp"
 
 
 class Boundary
@@ -7,14 +8,13 @@ class Boundary
 private:
 
 public:
-    std::string boundaryType;
 
     void periodicBoundary(
-        std::vector<std::vector<double>>& U
+        thrust::device_vector<ConservationParameter>& U
     );
 
     void symmetricBoundary2nd(
-        std::vector<std::vector<double>>& U
+        thrust::device_vector<ConservationParameter>& U
     );
 
 private:
