@@ -10,11 +10,10 @@
 struct oneStepFirstFunctor {
 
     __device__
-    ConservationParameter operator()(
-        const ConservationParameter& u, 
-        const Flux& fluxF, 
-        const Flux& fluxFMinus1
-    ) const {
+    ConservationParameter operator()(const thrust::tuple<ConservationParameter, Flux, Flux>& tupleForOneStep1) const {
+        ConservationParameter u = thrust::get<0>(tupleForOneStep1);
+        Flux fluxF              = thrust::get<1>(tupleForOneStep1);
+        Flux fluxFMinus1        = thrust::get<2>(tupleForOneStep1);
         ConservationParameter uNext;
 
         uNext.rho  = u.rho  - device_dt / device_dx * (fluxF.f0 - fluxFMinus1.f0);
@@ -33,12 +32,11 @@ struct oneStepFirstFunctor {
 struct oneStepSecondFunctor {
 
     __device__
-    ConservationParameter operator()(
-        const ConservationParameter& u, 
-        const ConservationParameter& uBar, 
-        const Flux& fluxF, 
-        const Flux& fluxFMinus1
-    ) const {
+    ConservationParameter operator()(const thrust::tuple<ConservationParameter, ConservationParameter, Flux, Flux>& tupleForOneStep2) const {
+        ConservationParameter u    = thrust::get<0>(tupleForOneStep2);
+        ConservationParameter uBar = thrust::get<1>(tupleForOneStep2);
+        Flux fluxF                 = thrust::get<2>(tupleForOneStep2);
+        Flux fluxFMinus1           = thrust::get<3>(tupleForOneStep2);
         ConservationParameter uNext;
 
         uNext.rho   = 0.5 * (u.rho + uBar.rho
@@ -71,11 +69,11 @@ void IdealMHD1D::oneStepRK2()
 
     fluxF = fluxSolver.getFluxF(U);
 
-    auto tupleForFlux = thrust::make_tuple(U.begin(), fluxF.begin(), fluxF.begin() - 1);
-    auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
+    auto tupleForFluxFirst = thrust::make_tuple(U.begin(), fluxF.begin(), fluxF.begin() - 1);
+    auto tupleForFluxFirstIterator = thrust::make_zip_iterator(tupleForFluxFirst);
     thrust::transform(
-        tupleForFluxIterator + 1, 
-        tupleForFluxIterator + nx, 
+        tupleForFluxFirstIterator + 1, 
+        tupleForFluxFirstIterator + nx, 
         UBar.begin() + 1, 
         oneStepFirstFunctor()
     );
@@ -85,13 +83,13 @@ void IdealMHD1D::oneStepRK2()
 
     fluxF = fluxSolver.getFluxF(UBar);
 
-    auto tupleForFlux = thrust::make_tuple(U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - 1);
-    auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
+    auto tupleForFluxSecond = thrust::make_tuple(U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - 1);
+    auto tupleForFluxSecondIterator = thrust::make_zip_iterator(tupleForFluxSecond);
     thrust::transform(
-        tupleForFluxIterator + 1, 
-        tupleForFluxIterator + nx, 
+        tupleForFluxSecondIterator + 1, 
+        tupleForFluxSecondIterator + nx, 
         U.begin() + 1, 
-        oneStepFirstFunctor()
+        oneStepSecondFunctor()
     );
 
     //これはどうにかすること。保守性が低い

@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "../../../lib_IdealMHD_1D/const.hpp"
-#include "../../../lib_IdealMHD_1D/idealMHD_1D.hpp"
+#include "../../../lib_IdealMHD_1D_GPU/const.hpp"
+#include "../../../lib_IdealMHD_1D_GPU/idealMHD_1D.hpp"
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
@@ -19,15 +19,26 @@ double dt = 0.0;
 const int totalStep = 1000;
 double totalTime = 0.0;
 
+__constant__ double device_EPS;
+__constant__ double device_PI;
 
-int main()
+__constant__ double device_dx;
+__constant__ double device_xmin;
+__constant__ double device_xmax;
+__constant__ int device_nx;
+
+__constant__ double device_CFL;
+__constant__ double device_gamma_mhd;
+
+__device__ double device_dt;
+
+__constant__ int device_totalStep;
+__device__ double device_totalTime;
+
+
+void IdealMHD1D::initializeU()
 {
-    std::string directoryname = "results";
-    std::string filenameWithoutStep = "shock_tube";
-    std::ofstream logfile("log.txt");
-    int recordStep = 100;
-
-
+    /*
     double rhoL0, uL0, vL0, wL0, bxL0, byL0, bzL0, pL0, eL0;
     double rhoR0, uR0, vR0, wR0, bxR0, byR0, bzR0, pR0, eR0;
 
@@ -68,11 +79,23 @@ int main()
         UInit[6][i] = bzR0;
         UInit[7][i] = eR0;
     }
+    */
+}
+
+
+int main()
+{
+    initializeDeviceConstants();
+
+    std::string directoryname = "results";
+    std::string filenameWithoutStep = "shock_tube";
+    std::ofstream logfile("log.txt");
+    int recordStep = 100;
 
 
     IdealMHD1D idealMHD1D;
 
-    idealMHD1D.initializeU(UInit);
+    idealMHD1D.initializeU();
 
     for (int step = 0; step < totalStep+1; step++) {
         if (step % recordStep == 0) {

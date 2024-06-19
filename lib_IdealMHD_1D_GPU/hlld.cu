@@ -185,17 +185,17 @@ struct calculateHLLDParameterFunctor {
             - 4.0 * csR * csR * vaR * vaR)));
         
 
-        SL = std::min(uL, uR) - std::max(cfL, cfR);
-        SR = std::max(uL, uR) + std::max(cfL, cfR);
-        SL = std::min(SL, 0.0);
-        SR = std::max(SR, 0.0);
+        SL = thrust::min(uL, uR) - thrust::max(cfL, cfR);
+        SR = thrust::max(uL, uR) + thrust::max(cfL, cfR);
+        SL = thrust::min(SL, 0.0);
+        SR = thrust::max(SR, 0.0);
 
         SM = ((SR - uR) * rhoR * uR - (SL - uL) * rhoL * uL - pTR + pTL)
-           / ((SR - uR) * rhoR - (SL - uL) * rhoL + EPS);
+           / ((SR - uR) * rhoR - (SL - uL) * rhoL + device_EPS);
 
         pT1  = ((SR - uR) * rhoR * pTL - (SL - uL) * rhoL * pTR
              + rhoL * rhoR * (SR - uR) * (SL - uL) * (uR - uL))
-             / ((SR - uR) * rhoR - (SL - uL) * rhoL + EPS);
+             / ((SR - uR) * rhoR - (SL - uL) * rhoL + device_EPS);
         pT1L = pT1;
         pT1R = pT1;
 
@@ -342,9 +342,11 @@ struct setFluxFunctor {
 
     __device__
     thrust::tuple<Flux, Flux, Flux, Flux, Flux, Flux> operator()(
-        const BasicParameter& dQLeft, const BasicParameter& dQRight, 
-        const HLLDParameter& hLLDParameter
+        const thrust::tuple<BasicParameter, BasicParameter, HLLDParameter>& tupleForFlux
     ) const {
+        BasicParameter dQLeft       = thrust::get<0>(tupleForFlux);
+        BasicParameter dQRight      = thrust::get<1>(tupleForFlux);
+        HLLDParameter hLLDParameter = thrust::get<2>(tupleForFlux);
 
         double rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL;
         double rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR;
@@ -353,6 +355,7 @@ struct setFluxFunctor {
         double rho2L, rho2R, u2, v2, w2, bY2, bZ2, e2L, e2R, pT2L, pT2R;
         Flux fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
         Flux fluxOuterRight, fluxMiddleRight, fluxInnerRight;
+    
     
         rhoL = dQLeft.rho;
         uL   = dQLeft.u;

@@ -1,26 +1,27 @@
-CC = g++
-CFLAGS = -std=c++20 -Wall -pedantic-errors -O3 -mtune=native -march=native
-SRCDIR = ../../../lib_IdealMHD_1D
-SOURCES = $(wildcard $(SRCDIR)/*.cpp)
-OBJS = $(patsubst $(SRCDIR)/%.cpp, $(SRCDIR)/%.o, $(SOURCES))
-MAIN = main_shock_tube.o
+CC = nvcc
+CXXFLAGS = -std=c++17 -rdc=true -Xcompiler "/wd 4819"
+SRCDIR = ../../../lib_IdealMHD_1D_GPU
+SOURCES = $(wildcard $(SRCDIR)/*.cu)
+OBJS = $(patsubst $(SRCDIR)/%.cu, $(SRCDIR)/%.o, $(SOURCES))
+MAIN_SRC = main_shock_tube.cu
+MAIN_OBJ = main_shock_tube.o
 EXECUTABLE = program
 
-.PHONY: all clean
+.PHONY: all clean run
 
 all: $(EXECUTABLE)
 
-$(EXECUTABLE): $(OBJS) $(MAIN)
-	$(CC) $(CFLAGS) $(OBJS) $(MAIN) -o $(EXECUTABLE)
+$(EXECUTABLE): $(OBJS) $(MAIN_OBJ)
+	$(CC) $(OBJS) $(MAIN_OBJ) -o $(EXECUTABLE)
 
-$(SRCDIR)/%.o: $(SRCDIR)/%.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+$(SRCDIR)/%.o: $(SRCDIR)/%.cu
+	$(CC) $(CXXFLAGS) -c $< -o $@
 
-$(MAIN): main_shock_tube.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+$(MAIN_OBJ): $(MAIN_SRC)
+	$(CC) $(CXXFLAGS) -c $< -o $@
 
 run: $(EXECUTABLE)
 	./$(EXECUTABLE)
 
 clean:
-	rm -f $(OBJS) $(MAIN) $(EXECUTABLE)
+	rm -f $(SRCDIR)/*.o $(MAIN_OBJ) $(EXECUTABLE)
