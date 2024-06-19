@@ -38,7 +38,6 @@ __device__ double device_totalTime;
 
 void IdealMHD1D::initializeU()
 {
-    /*
     double rhoL0, uL0, vL0, wL0, bxL0, byL0, bzL0, pL0, eL0;
     double rhoR0, uR0, vR0, wR0, bxR0, byR0, bzR0, pR0, eR0;
 
@@ -58,28 +57,26 @@ void IdealMHD1D::initializeU()
         + 0.5 * rhoR0 * (uR0 * uR0 + vR0 * vR0 + wR0 * wR0)
         + 0.5 * (bxR0 * bxR0 + byR0 * byR0 + bzR0 * bzR0);
 
-    std::vector<std::vector<double>> UInit(8, std::vector<double>(nx, 0.0));
     for (int i = 0; i < int(nx / 2.0); i++) {
-        UInit[0][i] = rhoL0;
-        UInit[1][i] = rhoL0 * uL0;
-        UInit[2][i] = rhoL0 * vL0;
-        UInit[3][i] = rhoL0 * wL0;
-        UInit[4][i] = bxL0;
-        UInit[5][i] = byL0;
-        UInit[6][i] = bzL0;
-        UInit[7][i] = eL0;
+        U[0][i] = rhoL0;
+        U[1][i] = rhoL0 * uL0;
+        U[2][i] = rhoL0 * vL0;
+        U[3][i] = rhoL0 * wL0;
+        U[4][i] = bxL0;
+        U[5][i] = byL0;
+        U[6][i] = bzL0;
+        U[7][i] = eL0;
     }
     for (int i = int(nx / 2.0); i < nx; i++) {
-        UInit[0][i] = rhoR0;
-        UInit[1][i] = rhoR0 * uR0;
-        UInit[2][i] = rhoR0 * vR0;
-        UInit[3][i] = rhoR0 * wR0;
-        UInit[4][i] = bxR0;
-        UInit[5][i] = byR0;
-        UInit[6][i] = bzR0;
-        UInit[7][i] = eR0;
+        U[0][i] = rhoR0;
+        U[1][i] = rhoR0 * uR0;
+        U[2][i] = rhoR0 * vR0;
+        U[3][i] = rhoR0 * wR0;
+        U[4][i] = bxR0;
+        U[5][i] = byR0;
+        U[6][i] = bzR0;
+        U[7][i] = eR0;
     }
-    */
 }
 
 
@@ -91,7 +88,6 @@ int main()
     std::string filenameWithoutStep = "shock_tube";
     std::ofstream logfile("log.txt");
     int recordStep = 100;
-
 
     IdealMHD1D idealMHD1D;
 
