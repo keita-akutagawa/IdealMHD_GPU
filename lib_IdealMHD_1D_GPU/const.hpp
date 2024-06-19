@@ -35,9 +35,6 @@ extern __constant__ int device_totalStep;
 extern __device__ double device_totalTime;
 
 
-#endif
-
-
 void initializeDeviceConstants() {
     cudaMemcpyToSymbol(device_EPS, &EPS, sizeof(double));
     cudaMemcpyToSymbol(device_PI, &PI, sizeof(double));
@@ -52,6 +49,6 @@ void initializeDeviceConstants() {
     cudaMemcpyToSymbol(totalTime, &device_totalTime, sizeof(double));
 }
 
-
+#endif
 
 

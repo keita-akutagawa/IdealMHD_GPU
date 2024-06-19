@@ -134,9 +134,9 @@ void IdealMHD1D::save(
 }
 
 
-/*
 void IdealMHD1D::calculateDt()
 {
+    /*
     double rho, u, v, w, bx, by, bz, e, p, cs, ca;
     double maxSpeed;
     
@@ -163,8 +163,8 @@ void IdealMHD1D::calculateDt()
     }
     
     dt *= CFL;
+    */
 }
-*/
 
 
 // getter
