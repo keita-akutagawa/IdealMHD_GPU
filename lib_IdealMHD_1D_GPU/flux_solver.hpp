@@ -2,17 +2,15 @@
 #include "hlld.hpp"
 
 
-class HLLD;
-
 class FluxSolver
 {
 private:
     HLLD hLLD;
-    Flux flux;
+    thrust::device_vector<Flux> flux;
 
 public:
-    Flux getFluxF(
-        const std::vector<std::vector<double>> U
+    thrust::device_vector<Flux> getFluxF(
+        const thrust::device_vector<ConservationParameter>& U
     );
 };
 

@@ -18,26 +18,25 @@ struct CalculateFluxFunctor {
     __device__
     Flux operator()(
         const thrust::tuple<
-        HLLDParameter, HLLDParameter, 
+        HLLDParameter, 
         Flux, Flux, Flux, 
         Flux, Flux, Flux
         >& tupleForFlux) const {
-            HLLDParameter hLLDLeftParameter = thrust::get<0>(tupleForFlux);
-            HLLDParameter hLLDRightParameter = thrust::get<1>(tupleForFlux);
-            Flux fluxOuterLeft = thrust::get<2>(tupleForFlux);
-            Flux fluxMiddleLeft = thrust::get<3>(tupleForFlux);
-            Flux fluxInnerLeft = thrust::get<4>(tupleForFlux);
-            Flux fluxOuterRight = thrust::get<5>(tupleForFlux);
-            Flux fluxMiddleRight = thrust::get<6>(tupleForFlux);
-            Flux fluxInnerRight = thrust::get<7>(tupleForFlux);
+            HLLDParameter hLLDParameter = thrust::get<0>(tupleForFlux);
+            Flux fluxOuterLeft          = thrust::get<1>(tupleForFlux);
+            Flux fluxMiddleLeft         = thrust::get<2>(tupleForFlux);
+            Flux fluxInnerLeft          = thrust::get<3>(tupleForFlux);
+            Flux fluxOuterRight         = thrust::get<4>(tupleForFlux);
+            Flux fluxMiddleRight        = thrust::get<5>(tupleForFlux);
+            Flux fluxInnerRight         = thrust::get<6>(tupleForFlux);
 
             Flux flux;
 
-            double SL = hLLDLeftParameter.S;
-            double S1L = hLLDLeftParameter.S1;
-            double SM = hLLDLeftParameter.SM; //hLLDRightParametersでもOK
-            double SR = hLLDRightParameter.S;
-            double S1R = hLLDRightParameter.S1;
+            double SL = hLLDParameter.SL;
+            double S1L = hLLDParameter.S1L;
+            double SM = hLLDParameter.SM;
+            double SR = hLLDParameter.SR;
+            double S1R = hLLDParameter.S1R;
 
             auto calculateFluxComponent = [&](
                 double outerLeft, double middleLeft, double innerLeft,
@@ -94,19 +93,11 @@ void HLLD::calculateFlux(
 )
 {
     setComponents(U);
-    calculateHLLDParametersForOuterFan();
-    calculateHLLDParametersForMiddleFan();
-    calculateHLLDParametersForInnerFan();
-
-    setFlux(outerLeftFanParameter, fluxOuterLeft);
-    setFlux(outerRightFanParameter, fluxOuterRight);
-    setFlux(middleLeftFanParameter, fluxMiddleLeft);
-    setFlux(middleRightFanParameter, fluxMiddleRight);
-    setFlux(innerLeftFanParameter, fluxInnerLeft);
-    setFlux(innerRightFanParameter, fluxInnerRight);
+    calculateHLLDParameter();
+    setFlux();
 
     auto tupleForFlux = thrust::make_tuple(
-        hLLDLeftParameter.begin(), hLLDRightParameter.begin(), 
+        hLLDParameter.begin(), 
         fluxOuterLeft.begin(), fluxMiddleLeft.begin(), fluxInnerLeft.begin(), 
         fluxOuterRight.begin(), fluxMiddleRight.begin(), fluxInnerRight.begin()
     );
@@ -135,42 +126,64 @@ void HLLD::setComponents(
 }
 
 
-void HLLD::calculateHLLDParametersForOuterFan()
-{
-    setFanParametersFromComponents(
-        dQLeft, outerLeftFanParameter
-    );
-    setFanParametersFromComponents(
-        dQRight, outerRightFanParameter
-    );
-}
+struct calculateHLLDParameterFunctor {
+
+    __device__
+    HLLDParameter operator()(const BasicParameter& dQLeft,  const BasicParameter& dQRight) const {
+        double rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pL, pTL;
+        double rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pR, pTR;
+        double csL, caL, vaL, cfL; 
+        double csR, caR, vaR, cfR;
+        double SL, SR, SM;
+        double pT1, pT1L, pT1R;
+        double rho1L, u1L, v1L, w1L, bX1L, bY1L, bZ1L, e1L;
+        double rho1R, u1R, v1R, w1R, bX1R, bY1R, bZ1R, e1R;
+        double S1L, S1R;
+        double rho2L, rho2R, u2, v2, w2, bY2, bZ2, e2L, e2R, pT2L, pT2R;
+        Sign sign;
+        HLLDParameter hLLDParameter;
+
+        rhoL = dQLeft.rho;
+        uL   = dQLeft.u;
+        vL   = dQLeft.v;
+        wL   = dQLeft.w;
+        bXL  = dQLeft.bX;
+        bYL  = dQLeft.bY;
+        bZL  = dQLeft.bZ;
+        pL   = dQLeft.p;
+        eL   = pL / (device_gamma_mhd - 1.0)
+             + 0.5 * rhoL * (uL * uL + vL * vL + wL * wL)
+             + 0.5 * (bXL * bXL + bYL * bYL + bZL * bZL); 
+        pTL  = pL + 0.5 * (bXL * bXL + bYL * bYL + bZL * bZL);
+
+        rhoR = dQRight.rho;
+        uR   = dQRight.u;
+        vR   = dQRight.v;
+        wR   = dQRight.w;
+        bXR  = dQRight.bX;
+        bYR  = dQRight.bY;
+        bZR  = dQRight.bZ;
+        pR   = dQRight.p;
+        eR   = pR / (device_gamma_mhd - 1.0)
+             + 0.5 * rhoR * (uR * uR + vR * vR + wR * wR)
+             + 0.5 * (bXR * bXR + bYR * bYR + bZR * bZR); 
+        pTR  = pR + 0.5 * (bXR * bXR + bYR * bYR + bZR * bZR);
 
 
-void HLLD::calculateHLLDParametersForMiddleFan()
-{
-    calculateHLLDSubParametersForMiddleFan(
-        dQLeft, 
-        outerLeftFanParameter, 
-        hLLDLeftParameter
-    );
-    calculateHLLDSubParametersForMiddleFan(
-        dQRight, 
-        outerRightFanParameter, 
-        hLLDRightParameter
-    );
-
-    double SL, SR, SM, pT1, pTL, pTR;
-    double pT1L, pT1R;
-    double rhoL, rhoR, uL, uR, cfL, cfR;
-    for (int i = 0; i < nx; i++) {
-        rhoL = outerLeftFanParameters.rho[i];
-        rhoR = outerRightFanParameters.rho[i];
-        uL = outerLeftFanParameters.u[i];
-        uR = outerRightFanParameters.u[i];
-        pTL = hLLDLeftParameters.pT[i]; //outerLeftFanParametersでもOK
-        pTR = hLLDRightParameters.pT[i];
-        cfL = hLLDLeftParameters.cf[i];
-        cfR = hLLDRightParameters.cf[i];
+        csL = sqrt(device_gamma_mhd * pL / rhoL);
+        caL = sqrt((bXL * bXL + bYL * bYL + bZL * bZL) / rhoL);
+        vaL = sqrt(bXL * bXL / rhoL);
+        cfL = sqrt(0.5 * (csL * csL + caL * caL
+            + sqrt((csL * csL + caL * caL) * (csL * csL + caL * caL)
+            - 4.0 * csL * csL * vaL * vaL)));
+        
+        csR = sqrt(device_gamma_mhd * pR / rhoR);
+        caR = sqrt((bXR * bXR + bYR * bYR + bZR * bZR) / rhoR);
+        vaR = sqrt(bXR * bXR / rhoR);
+        cfR = sqrt(0.5 * (csR * csR + caR * caR
+            + sqrt((csR * csR + caR * caR) * (csR * csR + caR * caR)
+            - 4.0 * csR * csR * vaR * vaR)));
+        
 
         SL = std::min(uL, uR) - std::max(cfL, cfR);
         SR = std::max(uL, uR) + std::max(cfL, cfR);
@@ -179,356 +192,243 @@ void HLLD::calculateHLLDParametersForMiddleFan()
 
         SM = ((SR - uR) * rhoR * uR - (SL - uL) * rhoL * uL - pTR + pTL)
            / ((SR - uR) * rhoR - (SL - uL) * rhoL + EPS);
-        pT1 = ((SR - uR) * rhoR * pTL - (SL - uL) * rhoL * pTR
-            + rhoL * rhoR * (SR - uR) * (SL - uL) * (uR - uL))
-            / ((SR - uR) * rhoR - (SL - uL) * rhoL + EPS);
+
+        pT1  = ((SR - uR) * rhoR * pTL - (SL - uL) * rhoL * pTR
+             + rhoL * rhoR * (SR - uR) * (SL - uL) * (uR - uL))
+             / ((SR - uR) * rhoR - (SL - uL) * rhoL + EPS);
         pT1L = pT1;
         pT1R = pT1;
 
-        hLLDLeftParameters.S[i] = SL;
-        hLLDRightParameters.S[i] = SR;
-        hLLDLeftParameters.SM[i] = SM;
-        hLLDRightParameters.SM[i] = SM; //やらなくてもOK
-        hLLDLeftParameters.pT1[i] = pT1L;
-        hLLDRightParameters.pT1[i] = pT1R;
-    }
 
-    calculateHLLDParameters1(
-        outerLeftFanParameter, 
-        hLLDLeftParameter, 
-        middleLeftFanParameter
-    );
-    calculateHLLDParameters1(
-        outerRightFanParameter, 
-        hLLDRightParameter, 
-        middleRightFanParameter
-    );
-}
+        rho1L = rhoL * (SL - uL) / (SL - SM + device_EPS);
+        u1L   = SM;
+        v1L   = vL - bXL * bYL * (SM - uL) / (rhoL * (SL - uL) * (SL - SM) - bXL * bXL + device_EPS);
+        w1L   = wL - bXL * bZL * (SM - uL) / (rhoL * (SL - uL) * (SL - SM) - bXL * bXL + device_EPS);
+        bX1L  = bXL;
+        bY1L  = bYL * (rhoL * (SL - uL) * (SL - uL) - bXL * bXL)
+              / (rhoL * (SL - uL) * (SL - SM) - bXL * bXL + device_EPS);
+        bZ1L  = bZL * (rhoL * (SL - uL) * (SL - uL) - bXL * bXL)
+              / (rhoL * (SL - uL) * (SL - SM) - bXL * bXL + device_EPS);
+        e1L   = ((SL - uL) * eL - pTL * uL + pT1 * SM
+              + bXL * ((uL * bXL + vL * bYL + wL * bZL) - (u1L * bX1L + v1L * bY1L + w1L * bZ1L)))
+              / (SL - SM + device_EPS);
+        
+        rho1R = rhoR * (SR - uR) / (SR - SM + device_EPS);
+        u1R   = SM;
+        v1R   = vR - bXR * bYR * (SM - uR) / (rhoR * (SR - uR) * (SR - SM) - bXR * bXR + device_EPS);
+        w1R   = wR - bXR * bZR * (SM - uR) / (rhoR * (SR - uR) * (SR - SM) - bXR * bXR + device_EPS);
+        bX1R  = bXR;
+        bY1R  = bYR * (rhoR * (SR - uR) * (SR - uR) - bXR * bXR)
+              / (rhoR * (SR - uR) * (SR - SM) - bXR * bXR + device_EPS);
+        bZ1R  = bZR * (rhoR * (SR - uR) * (SR - uR) - bXR * bXR)
+              / (rhoR * (SR - uR) * (SR - SM) - bXR * bXR + device_EPS);
+        e1R   = ((SR - uR) * eR - pTR * uR + pT1 * SM
+              + bXR * ((uR * bXR + vR * bYR + wR * bZR) - (u1R * bX1R + v1R * bY1R + w1R * bZ1R)))
+              / (SR - SM + device_EPS);
+        
+        S1L = SM - sqrt(bX1L * bX1L / rho1L);
+        S1R = SM + sqrt(bX1R * bX1R / rho1R);
 
-
-void HLLD::calculateHLLDParametersForInnerFan()
-{
-    double S1L, S1R, SM, rho1L, rho1R, bx1;
-    for (int i = 0; i < nx; i++) {
-        SM = hLLDLeftParameters.SM[i]; //RightでもOK
-        rho1L = middleLeftFanParameters.rho[i];
-        rho1R = middleRightFanParameters.rho[i];
-        bx1 = middleLeftFanParameters.bx[i]; //RightでもOK
-
-        S1L = SM - sqrt(bx1 * bx1 / rho1L);
-        S1R = SM + sqrt(bx1 * bx1 / rho1R);
-
-        hLLDLeftParameters.S1[i] = S1L;
-        hLLDRightParameters.S1[i] = S1R;
-    }
-
-    calculateHLLDParameters2();
-
-}
-
-
-struct setFanParameterFromComponentsFunctor {
-
-    __device__
-    FanParameter operator()(const BasicParameter& dQ) const {
-        FanParameter fanParameter;
-        double rho, u, v, w, bX, bY, bZ, e, p, pT;
-
-        rho = dQ.rho;
-        u = dQ.u;
-        v = dQ.v;
-        w = dQ.w;
-        bX = dQ.bX;
-        bY = dQ.bY;
-        bZ = dQ.bZ;
-        p = dQ.p;
-        e = p / (gamma_mhd - 1.0)
-          + 0.5 * rho * (u * u + v * v + w * w)
-          + 0.5 * (bX * bX + bY * bY + bZ * bZ); 
-        pT = p + 0.5 * (bX * bX + bY * bY + bZ * bZ);
-
-        fanParameter.rho = rho;
-        fanParameter.u = u;
-        fanParameter.v = v;
-        fanParameter.w = w;
-        fanParameter.bX = bX;
-        fanParameter.bY = bY;
-        fanParameter.bZ = bZ;
-        fanParameter.e = e;
-        fanParameter.pT = pT;
-
-        return fanParameter;
-    }
-};
-
-void HLLD::setFanParametersFromComponents(
-    const thrust::device_vector<BasicParameter>& dQ, 
-    thrust::device_vector<FanParameter>& fanParameter
-)
-{
-    thrust::transform(
-        dQ.begin(), 
-        dQ.end(), 
-        fanParameter.begin(), 
-        setFanParameterFromComponentsFunctor()
-    );
-}
+        
+        rho2L = rho1L;
+        rho2R = rho1R;
+        u2 = SM;
+        v2 = (sqrt(rho1L) * v1L + sqrt(rho1R) * v1R + (bY1R - bY1L) * sign(bX1L))
+            / (sqrt(rho1L) + sqrt(rho1R) + device_EPS);
+        w2 = (sqrt(rho1L) * w1L + sqrt(rho1R) * w1R + (bZ1R - bZ1L) * sign(bX1L))
+            / (sqrt(rho1L) + sqrt(rho1R) + device_EPS);
+        bY2 = (sqrt(rho1L) * bY1R + sqrt(rho1R) * bY1L + sqrt(rho1L * rho1R) * (v1R - v1L) * sign(bX1L))
+             / (sqrt(rho1L) + sqrt(rho1R) + device_EPS);
+        bZ2 = (sqrt(rho1L) * bZ1R + sqrt(rho1R) * bZ1L + sqrt(rho1L * rho1R) * (w1R - w1L) * sign(bX1L))
+             / (sqrt(rho1L) + sqrt(rho1R) + device_EPS);
+        e2L = e1L - sqrt(rho1L)
+            * ((u1L * bX1L + v1L * bY1L + w1L * bZ1L) - (u2 * bXL + v2 * bY2 + w2 * bZ2))
+            * sign(bXL);
+        e2R = e1R + sqrt(rho1R)
+            * ((u1R * bX1R + v1R * bY1R + w1R * bZ1R) - (u2 * bXR + v2 * bY2 + w2 * bZ2))
+            * sign(bXR);
+        pT2L = pT1L;
+        pT2R = pT1R;
 
 
-struct calculateHLLDSubParametersForMiddleFanFunctor {
+        // set
+        hLLDParameter.pTL = pTL;
+        hLLDParameter.pTR = pTR;
+        hLLDParameter.eL = eL;
+        hLLDParameter.eR = eR;
+        hLLDParameter.csL = csL;
+        hLLDParameter.csR = csR;
+        hLLDParameter.caL = caL;
+        hLLDParameter.caR = caR;
+        hLLDParameter.vaL = vaL;
+        hLLDParameter.vaR = vaR;
+        hLLDParameter.cfL = cfL;
+        hLLDParameter.cfR = cfR;
 
-    __device__
-    HLLDParameter operator()(const BasicParameter& dQ, const FanParameter& outerFanParameter) const {
-        double rho, bX, bY, bZ, e, pT, p;
-        double cs, ca, va, cf;
-        HLLDParameter hLLDParameter;
+        hLLDParameter.SL = SL;
+        hLLDParameter.SR = SR;
+        hLLDParameter.SM = SM;
 
-        rho = outerFanParameter.rho;
-        bX = outerFanParameter.bX;
-        bY = outerFanParameter.bY;
-        bZ = outerFanParameter.bZ;
-        e = outerFanParameter.e;
-        pT = outerFanParameter.pT;
+        hLLDParameter.rho1L = rho1L;
+        hLLDParameter.rho1R = rho1R;
+        hLLDParameter.u1L = u1L;
+        hLLDParameter.u1R = u1R;
+        hLLDParameter.v1L = v1L;
+        hLLDParameter.v1R = v1R;
+        hLLDParameter.w1L = w1L;
+        hLLDParameter.w1R = w1R;
+        hLLDParameter.bY1L = bY1L;
+        hLLDParameter.bY1R = bY1R;
+        hLLDParameter.bZ1L = bZ1L;
+        hLLDParameter.bZ1R = bZ1R;
+        hLLDParameter.e1L = e1L;
+        hLLDParameter.e1R = e1R;
+        hLLDParameter.pT1L = pT1L;
+        hLLDParameter.pT1R = pT1R;
 
-        p = dQ.p;
+        hLLDParameter.S1L = S1L;
+        hLLDParameter.S1R = S1R;
 
-        cs = sqrt(device_gamma_mhd * p / rho);
-        ca = sqrt((bX * bX + bY * bY + bZ * bZ) / rho);
-        va = sqrt(bX * bX / rho);
-        cf = sqrt(0.5 * (cs * cs + ca * ca
-           + sqrt((cs * cs + ca * ca) * (cs * cs + ca * ca)
-           - 4.0 * cs * cs * va * va)));
+        hLLDParameter.rho2L = rho2L;
+        hLLDParameter.rho2R = rho2R;
+        hLLDParameter.u2 = u2;
+        hLLDParameter.v2 = v2;
+        hLLDParameter.w2 = w2;
+        hLLDParameter.bY2 = bY2;
+        hLLDParameter.bZ2 = bZ2;
+        hLLDParameter.e2L = e2L;
+        hLLDParameter.e2R = e2R;
+        hLLDParameter.pT2L = pT2L;
+        hLLDParameter.pT2R = pT2R;
 
-        hLLDParameter.pT = pT;
-        hLLDParameter.e = e;
-        hLLDParameter.cs = cs;
-        hLLDParameter.ca = ca;
-        hLLDParameter.va = va;
-        hLLDParameter.cf = cf;
-    
         return hLLDParameter;
     }
 };
 
-void HLLD::calculateHLLDSubParametersForMiddleFan(
-    const thrust::device_vector<BasicParameter>& dQ, 
-    const thrust::device_vector<FanParameter>& outerFanParameter, 
-    thrust::device_vector<HLLDParameter>& hLLDParameter
+void HLLD::calculateHLLDParameter()
+{
+    thrust::transform(
+        dQLeft.begin(), 
+        dQLeft.end(), 
+        dQRight.begin(), 
+        hLLDParameter.begin(), 
+        calculateHLLDParameterFunctor()
+    );
+}
+
+
+__device__ 
+Flux getOneFlux(
+    double rho, double u, double v, double w, 
+    double bX, double bY, double bZ, 
+    double e, double pT
 )
 {
-    thrust::transform(
-        dQ.begin(), 
-        dQ.end(), 
-        outerFanParameter.begin(), 
-        hLLDParameter.begin(), 
-        calculateHLLDSubParametersForMiddleFanFunctor()
-    );
-}
+    Flux flux;
 
-
-struct calculateHLLDParameters1Functor {
-
-    __device__
-    FanParameter operator()(const FanParameter& outerFanParameter, const HLLDParameter hLLDParameter) const {
-        double rho, u, v, w, bX, bY, bZ, e, pT, pT1, S, SM;
-        double rho1, u1, v1, w1, bX1, bY1, bZ1, e1;
-        FanParameter middleFanParameter;
-
-        rho = outerFanParameter.rho;
-        u = outerFanParameter.u;
-        v = outerFanParameter.v;
-        w = outerFanParameter.w;
-        bX = outerFanParameter.bX;
-        bY = outerFanParameter.bY;
-        bZ = outerFanParameter.bZ;
-
-        e = hLLDParameter.e;
-        pT = hLLDParameter.pT;
-        pT1 = hLLDParameter.pT1;
-        S = hLLDParameter.S;
-        SM = hLLDParameter.SM;
-
-        rho1 = rho * (S - u) / (S - SM + EPS);
-        u1 = SM;
-        v1 = v - bX * bY * (SM - u) / (rho * (S - u) * (S - SM) - bX * bX + EPS);
-        w1 = w - bX * bZ * (SM - u) / (rho * (S - u) * (S - SM) - bX * bX + EPS);
-        bX1 = bX;
-        bY1 = bY * (rho * (S - u) * (S - u) - bX * bX)
-            / (rho * (S - u) * (S - SM) - bX * bX + EPS);
-        bZ1 = bZ * (rho * (S - u) * (S - u) - bX * bX)
-            / (rho * (S - u) * (S - SM) - bX * bX + EPS);
-        e1 = ((S - u) * e - pT * u + pT1 * SM
-           + bX * ((u * bX + v * bY + w * bZ) - (u1 * bX1 + v1 * bY1 + w1 * bZ1)))
-           / (S - SM + EPS);
-        
-        middleFanParameter.rho = rho1;
-        middleFanParameter.u = u1;
-        middleFanParameter.v = v1;
-        middleFanParameter.w = w1;
-        middleFanParameter.bX = bX1;
-        middleFanParameter.bY = bY1;
-        middleFanParameter.bZ = bZ1;
-        middleFanParameter.e = e1;
-        middleFanParameter.pT = pT1;
-
-        return middleFanParameter;
-    }
+    flux.f0 = rho * u;
+    flux.f1 = rho * u * u + pT - bX * bX;
+    flux.f2 = rho * u * v - bX * bY;
+    flux.f3 = rho * u * w - bX * bZ;
+    flux.f4 = 0.0;
+    flux.f5 = u * bY - v * bX;
+    flux.f6 = u * bZ - w * bX;
+    flux.f7 = (e + pT) * u - bX * (bX * u + bY * v + bZ * w);
+    
+    return flux;
 };
-
-void HLLD::calculateHLLDParameters1(
-    const thrust::device_vector<FanParameter>& outerFanParameter, 
-    const thrust::device_vector<HLLDParameter>& hLLDParameter, 
-    thrust::device_vector<FanParameter>& middleFanParameter
-)
-{
-    thrust::transform(
-        outerFanParameter.begin(), 
-        outerFanParameter.end(), 
-        hLLDParameter.begin(), 
-        middleFanParameter.begin(), 
-        calculateHLLDParameters1Functor()
-    );
-}
-
-
-struct calculateHLLDParameters2Functor {
-
-    __device__
-    thrust::tuple<FanParameter, FanParameter> operator()(
-        const FanParameter& middleLeftFanParameter, 
-        const FanParameter& middleRightFanParameter
-    ) const {
-        double rho1L, u1L, v1L, w1L, bX1L, bY1L, bZ1L, e1L, pT1L;
-        double rho1R, u1R, v1R, w1R, bX1R, bY1R, bZ1R, e1R, pT1R;
-        double rho2L, u2L, v2L, w2L, bX2L, bY2L, bZ2L, e2L, pT2L;
-        double rho2R, u2R, v2R, w2R, bX2R, bY2R, bZ2R, e2R, pT2R;
-        FanParameter innerLeftFanParameter, innerRightFanParameter;
-        Sign sign;
-
-        rho1L = middleLeftFanParameter.rho;
-        u1L = middleLeftFanParameter.u;
-        v1L = middleLeftFanParameter.v;
-        w1L = middleLeftFanParameter.w;
-        bX1L = middleLeftFanParameter.bX;
-        bY1L = middleLeftFanParameter.bY;
-        bZ1L = middleLeftFanParameter.bZ;
-        e1L = middleLeftFanParameter.e;
-        pT1L = middleLeftFanParameter.pT;
-        
-        rho1R = middleRightFanParameter.rho;
-        u1R = middleRightFanParameter.u;
-        v1R = middleRightFanParameter.v;
-        w1R = middleRightFanParameter.w;
-        bX1R = middleRightFanParameter.bX;
-        bY1R = middleRightFanParameter.bY;
-        bZ1R = middleRightFanParameter.bZ;
-        e1R = middleRightFanParameter.e;
-        pT1R = middleRightFanParameter.pT;
-
-
-        rho2L = rho1L;
-        rho2R = rho1R;
-        u2L = u1L;
-        u2R = u1R;
-        v2L = (sqrt(rho1L) * v1L + sqrt(rho1R) * v1R + (bY1R - bY1L) * sign(bX1L))
-            / (sqrt(rho1L) + sqrt(rho1R) + EPS);
-        v2R = v2L;
-        w2L = (sqrt(rho1L) * w1L + sqrt(rho1R) * w1R + (bZ1R - bZ1L) * sign(bX1L))
-            / (sqrt(rho1L) + sqrt(rho1R) + EPS);
-        w2R = w2L;
-        bX2L = bX1L;
-        bX2R = bX1R;
-        bY2L = (sqrt(rho1L) * bY1R + sqrt(rho1R) * bY1L + sqrt(rho1L * rho1R) * (v1R - v1L) * sign(bX1L))
-             / (sqrt(rho1L) + sqrt(rho1R) + EPS);
-        bY2R = bY2L;
-        bZ2L = (sqrt(rho1L) * bZ1R + sqrt(rho1R) * bZ1L + sqrt(rho1L * rho1R) * (w1R - w1L) * sign(bX1L))
-             / (sqrt(rho1L) + sqrt(rho1R) + EPS);
-        bZ2R = bZ2L;
-        e2L = e1L - sqrt(rho1L)
-            * ((u1L * bX1L + v1L * bY1L + w1L * bZ1L) - (u2L * bX2L + v2L * bY2L + w2L * bZ2L))
-            * sign(bX2L);
-        e2R = e1R + sqrt(rho1R)
-            * ((u1R * bX1R + v1R * bY1R + w1R * bZ1R) - (u2R * bX2R + v2R * bY2R + w2R * bZ2R))
-            * sign(bX2R);
-        pT2L = pT1L;
-        pT2R = pT1R;
-
-        innerLeftFanParameter.rho = rho2L;
-        innerLeftFanParameter.u = u2L;
-        innerLeftFanParameter.v = v2L;
-        innerLeftFanParameter.w = w2L;
-        innerLeftFanParameter.bX = bX2L;
-        innerLeftFanParameter.bY = bY2L;
-        innerLeftFanParameter.bZ = bZ2L;
-        innerLeftFanParameter.e = e2L;
-        innerLeftFanParameter.pT = pT2L;
-
-        innerRightFanParameter.rho = rho2R;
-        innerRightFanParameter.u = u2R;
-        innerRightFanParameter.v = v2R;
-        innerRightFanParameter.w = w2R;
-        innerRightFanParameter.bX = bX2R;
-        innerRightFanParameter.bY = bY2R;
-        innerRightFanParameter.bZ = bZ2R;
-        innerRightFanParameter.e = e2R;
-        innerRightFanParameter.pT = pT2R;
-
-        return thrust::make_tuple(innerLeftFanParameter, innerRightFanParameter);
-    }
-};
-
-void HLLD::calculateHLLDParameters2()
-{
-    thrust::transform(
-        middleLeftFanParameter.begin(), 
-        middleLeftFanParameter.end(), 
-        middleRightFanParameter.begin(), 
-        thrust::make_zip_iterator(thrust::make_tuple(innerLeftFanParameter.begin(), innerRightFanParameter.begin())),
-        calculateHLLDParameters2Functor()
-    );
-}
-
-
 
 struct setFluxFunctor {
 
     __device__
-    Flux operator()(const FanParameter& fanParameter) const {
-        double rho, u, v, w, bX, bY, bZ, e, pT;
-        Flux flux;
+    thrust::tuple<Flux, Flux, Flux, Flux, Flux, Flux> operator()(
+        const BasicParameter& dQLeft, const BasicParameter& dQRight, 
+        const HLLDParameter& hLLDParameter
+    ) const {
+
+        double rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL;
+        double rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR;
+        double rho1L, u1L, v1L, w1L, bY1L, bZ1L, e1L, pT1L;
+        double rho1R, u1R, v1R, w1R, bY1R, bZ1R, e1R, pT1R;
+        double rho2L, rho2R, u2, v2, w2, bY2, bZ2, e2L, e2R, pT2L, pT2R;
+        Flux fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
+        Flux fluxOuterRight, fluxMiddleRight, fluxInnerRight;
     
-        rho = fanParameter.rho;
-        u = fanParameter.u;
-        v = fanParameter.v;
-        w = fanParameter.w;
-        bX = fanParameter.bX;
-        bY = fanParameter.bY;
-        bZ = fanParameter.bZ;
-        e = fanParameter.e;
-        pT = fanParameter.pT;
+        rhoL = dQLeft.rho;
+        uL   = dQLeft.u;
+        vL   = dQLeft.v;
+        wL   = dQLeft.w;
+        bXL  = dQLeft.bX;
+        bYL  = dQLeft.bY;
+        bZL  = dQLeft.bZ;
+        eL   = hLLDParameter.eL;
+        pTL  = hLLDParameter.pTL;
 
-        flux.f0 = rho * u;
-        flux.f1 = rho * u * u + pT - bX * bX;
-        flux.f2 = rho * u * v - bX * bY;
-        flux.f3 = rho * u * w - bX * bZ;
-        flux.f4 = 0.0;
-        flux.f5 = u * bY - v * bX;
-        flux.f6 = u * bZ - w * bX;
-        flux.f7 = (e + pT) * u - bX * (bX * u + bY * v + bZ * w);
+        rhoR = dQRight.rho;
+        uR   = dQRight.u;
+        vR   = dQRight.v;
+        wR   = dQRight.w;
+        bXR  = dQRight.bX;
+        bYR  = dQRight.bY;
+        bZR  = dQRight.bZ;
+        eR   = hLLDParameter.eR;
+        pTR  = hLLDParameter.pTR;
 
-        return flux;
+        rho1L = hLLDParameter.rho1L;
+        rho1R = hLLDParameter.rho1R;
+        u1L   = hLLDParameter.u1L;
+        u1R   = hLLDParameter.u1R;
+        v1L   = hLLDParameter.v1L;
+        v1R   = hLLDParameter.v1R;
+        w1L   = hLLDParameter.w1L;
+        w1R   = hLLDParameter.w1R;
+        bY1L  = hLLDParameter.bY1L;
+        bY1R  = hLLDParameter.bY1R;
+        bZ1L  = hLLDParameter.bZ1L;
+        bZ1R  = hLLDParameter.bZ1R;
+        e1L   = hLLDParameter.e1L;
+        e1R   = hLLDParameter.e1R;
+        pT1L  = hLLDParameter.pT1L;
+        pT1R  = hLLDParameter.pT1R;
+
+        rho2L = hLLDParameter.rho2L;
+        rho2R = hLLDParameter.rho2R;
+        u2    = hLLDParameter.u2;
+        v2    = hLLDParameter.v2;
+        w2    = hLLDParameter.w2;
+        bY2   = hLLDParameter.bY2;
+        bZ2   = hLLDParameter.bZ2;
+        e2L   = hLLDParameter.e2L;
+        e2R   = hLLDParameter.e2R;
+        pT2L  = hLLDParameter.pT2L;
+        pT2R  = hLLDParameter.pT2R;
+
+        fluxOuterLeft   = getOneFlux(rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL);
+        fluxMiddleLeft  = getOneFlux(rho1L, u1L, v1L, w1L, bXL, bY1L, bZ1L, e1L, pT1L);
+        fluxInnerLeft   = getOneFlux(rho2L, u2, v2, w2, bXL, bY2, bZ2, e2L, pT2L);
+        fluxOuterRight  = getOneFlux(rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR);
+        fluxMiddleRight = getOneFlux(rho1R, u1R, v1R, w1R, bXR, bY1R, bZ1R, e1R, pT1R);
+        fluxInnerRight  = getOneFlux(rho2R, u2, v2, w2, bXR, bY2, bZ2, e2R, pT2R);
+
+        return thrust::make_tuple(
+            fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft, 
+            fluxOuterRight, fluxMiddleRight, fluxInnerRight
+        );
     }
 };
 
-void HLLD::setFlux(
-    const thrust::device_vector<FanParameter>& fanParameter, 
-    thrust::device_vector<Flux>& flux
-)
+void HLLD::setFlux()
 {
+    auto tupleForFlux = thrust::make_tuple(dQLeft.begin(), dQRight.begin(), hLLDParameter.begin());
+    auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
+
     thrust::transform(
-        fanParameter.begin(), 
-        fanParameter.end(), 
-        flux.begin(), 
+        tupleForFluxIterator, 
+        tupleForFluxIterator + nx, 
+        thrust::make_zip_iterator(
+            thrust::make_tuple(fluxOuterLeft.begin(), fluxMiddleLeft.begin(), fluxInnerLeft.begin(), 
+                               fluxOuterRight.begin(), fluxMiddleRight.begin(), fluxInnerRight.begin())
+        ),
         setFluxFunctor()
     );
 }

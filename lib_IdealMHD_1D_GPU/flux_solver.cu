@@ -1,8 +1,8 @@
 #include "flux_solver.hpp"
 
 
-Flux FluxSolver::getFluxF(
-    const std::vector<std::vector<double>> U
+thrust::device_vector<Flux> FluxSolver::getFluxF(
+    const thrust::device_vector<ConservationParameter>& U
 )
 {
     hLLD.calculateFlux(U);
