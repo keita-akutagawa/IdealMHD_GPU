@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "../../../lib_IdealMHD_1D_GPU/const.hpp"
-#include "../../../lib_IdealMHD_1D_GPU/idealMHD_1D.hpp"
+#include "../../lib_IdealMHD_1D_GPU/const.hpp"
+#include "../../lib_IdealMHD_1D_GPU/idealMHD_1D.hpp"
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
@@ -38,55 +38,35 @@ __device__ double device_totalTime;
 
 __global__ void initializeU_kernel(
     ConservationParameter* U, 
-    double rhoL0, double uL0, double vL0, double wL0, double bXL0, double bYL0, double bZL0, double pL0, double eL0, 
-    double rhoR0, double uR0, double vR0, double wR0, double bXR0, double bYR0, double bZR0, double pR0, double eR0
+    double rho0, double u0, double v0, double w0, double bX0, double bY0, double bZ0, double p0, double e0
 ) 
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     
     if (i < device_nx) {
-        if (i < device_nx / 2) {
-            U[i].rho  = rhoL0;
-            U[i].rhoU = rhoL0 * uL0;
-            U[i].rhoV = rhoL0 * vL0;
-            U[i].rhoW = rhoL0 * wL0;
-            U[i].bX   = bXL0;
-            U[i].bY   = bYL0;
-            U[i].bZ   = bZL0;
-            U[i].e    = eL0;
-        } else {
-            U[i].rho  = rhoR0;
-            U[i].rhoU = rhoR0 * uR0;
-            U[i].rhoV = rhoR0 * vR0;
-            U[i].rhoW = rhoR0 * wR0;
-            U[i].bX   = bXR0;
-            U[i].bY   = bYR0;
-            U[i].bZ   = bZR0;
-            U[i].e    = eR0;
-        }
+        U[i].rho  = rho0;
+        U[i].rhoU = rho0 * u0;
+        U[i].rhoV = rho0 * v0;
+        U[i].rhoW = rho0 * w0;
+        U[i].bX   = bX0;
+        U[i].bY   = bY0;
+        U[i].bZ   = bZ0;
+        U[i].e    = e0;
     }
 }
 
 void IdealMHD1D::initializeU()
 {
-    double rhoL0, uL0, vL0, wL0, bXL0, bYL0, bZL0, pL0, eL0;
-    double rhoR0, uR0, vR0, wR0, bXR0, bYR0, bZR0, pR0, eR0;
+    double rho0, u0, v0, w0, bX0, bY0, bZ0, p0, e0;
 
-    rhoL0 = 1.0;
-    uL0 = 10.0; vL0 = 0.0; wL0 = 0.0;
-    bXL0 = 5.0 / sqrt(4.0 * PI); bYL0 = 5.0 / sqrt(4.0 * PI); bZL0 = 0.0;
-    pL0 = 20.0;
-    eL0 = pL0 / (gamma_mhd - 1.0)
-        + 0.5 * rhoL0 * (uL0 * uL0 + vL0 * vL0 + wL0 * wL0)
-        + 0.5 * (bXL0 * bXL0 + bYL0 * bYL0 + bZL0 * bZL0);
+    rho0 = 1.0;
+    u0 = 1.0; v0 = 0.0; w0 = 0.0;
+    bX0 = 1.0; bY0 = 0.0; bZ0 = 0.0;
+    p0 = 1.0;
+    e0 = p0 / (gamma_mhd - 1.0)
+        + 0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0)
+        + 0.5 * (bX0 * bX0 + bY0 * bY0 + bZ0 * bZ0);
 
-    rhoR0 = 1.0;
-    uR0 = -10.0; vR0 = 0.0; wR0 = 0.0;
-    bXR0 = 5.0 / sqrt(4.0 * PI); bYR0 = 5.0 / sqrt(4.0 * PI); bZR0 = 0.0;
-    pR0 = 1.0;
-    eR0 = pR0 / (gamma_mhd - 1.0)
-        + 0.5 * rhoR0 * (uR0 * uR0 + vR0 * vR0 + wR0 * wR0)
-        + 0.5 * (bXR0 * bXR0 + bYR0 * bYR0 + bZR0 * bZR0);
     
 
     int threadsPerBlock = 256;
@@ -94,8 +74,7 @@ void IdealMHD1D::initializeU()
 
     initializeU_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
-        rhoL0, uL0, vL0, wL0, bXL0, bYL0, bZL0, pL0, eL0, 
-        rhoR0, uR0, vR0, wR0, bXR0, bYR0, bZR0, pR0, eR0
+        rho0, u0, v0, w0, bX0, bY0, bZ0, p0, e0
     );
 
     cudaDeviceSynchronize();
@@ -107,7 +86,7 @@ int main()
     initializeDeviceConstants();
 
     std::string directoryname = "results";
-    std::string filenameWithoutStep = "shock_tube";
+    std::string filenameWithoutStep = "wave";
     std::ofstream logfile("log.txt");
     int recordStep = 100;
 
