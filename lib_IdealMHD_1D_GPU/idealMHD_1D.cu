@@ -163,11 +163,11 @@ struct calculateDtFunctor {
           * (e - 0.5 * rho * (u * u + v * v + w * w)
           - 0.5 * (bX * bX + bY * bY + bZ * bZ));
         
-        cs = sqrt(gamma_mhd * p / rho);
+        cs = sqrt(device_gamma_mhd * p / rho);
         ca = sqrt((bX * bX + bY * bY + bZ * bZ) / rho);
 
         maxSpeed = std::abs(u) + sqrt(cs * cs + ca * ca);
-        dt = 1.0 / (maxSpeed / dx + EPS);
+        dt = 1.0 / (maxSpeed / device_dx + device_EPS);
 
         return dt;
     }
@@ -185,7 +185,7 @@ void IdealMHD1D::calculateDt()
 
     thrust::device_vector<double>::iterator dtMin = thrust::min_element(dtVector.begin(), dtVector.end());
     
-    dt =  *dtMin * CFL;
+    dt =  (*dtMin) * CFL;
 }
 
 
