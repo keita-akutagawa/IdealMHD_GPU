@@ -59,12 +59,12 @@ struct RightParameterFunctor {
         BasicParameter dQRight;
 
         dQRight.rho = dQPlus1.rho - 0.5 * minmod(dQPlus1.rho - dQ.rho, dQPlus2.rho - dQPlus1.rho);
-        dQRight.u   = dQPlus1.u   - 0.5 * minmod(dQPlus1.u   - dQ.u  , dQPlus2.u   - dQPlus1.u);
-        dQRight.v   = dQPlus1.v   - 0.5 * minmod(dQPlus1.v   - dQ.v  , dQPlus2.v   - dQPlus1.v);
-        dQRight.w   = dQPlus1.w   - 0.5 * minmod(dQPlus1.w   - dQ.w  , dQPlus2.w   - dQPlus1.w);
-        dQRight.bY  = dQPlus1.bY  - 0.5 * minmod(dQPlus1.bY  - dQ.bY , dQPlus2.bY  - dQPlus1.bY);
-        dQRight.bZ  = dQPlus1.bZ  - 0.5 * minmod(dQPlus1.bZ  - dQ.bZ , dQPlus2.bZ  - dQPlus1.bZ);
-        dQRight.p   = dQPlus1.p   - 0.5 * minmod(dQPlus1.p   - dQ.p  , dQPlus2.p   - dQPlus1.p);
+        dQRight.u   = dQPlus1.u   - 0.5 * minmod(dQPlus1.u   - dQ.u  , dQPlus2.u   - dQPlus1.u  );
+        dQRight.v   = dQPlus1.v   - 0.5 * minmod(dQPlus1.v   - dQ.v  , dQPlus2.v   - dQPlus1.v  );
+        dQRight.w   = dQPlus1.w   - 0.5 * minmod(dQPlus1.w   - dQ.w  , dQPlus2.w   - dQPlus1.w  );
+        dQRight.bY  = dQPlus1.bY  - 0.5 * minmod(dQPlus1.bY  - dQ.bY , dQPlus2.bY  - dQPlus1.bY );
+        dQRight.bZ  = dQPlus1.bZ  - 0.5 * minmod(dQPlus1.bZ  - dQ.bZ , dQPlus2.bZ  - dQPlus1.bZ );
+        dQRight.p   = dQPlus1.p   - 0.5 * minmod(dQPlus1.p   - dQ.p  , dQPlus2.p   - dQPlus1.p  );
 
         dQRight.bX  = dQ.bX;
 

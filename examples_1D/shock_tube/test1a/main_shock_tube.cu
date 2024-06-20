@@ -15,8 +15,8 @@ const double xmax = 1.0;
 const int nx = int((xmax - xmin) / dx);
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
-double dt = dx / CFL;
-const int totalStep = 1000;
+double dt = dx / CFL * 0.01;
+const int totalStep = 10;
 double totalTime = 0.0;
 
 __constant__ double device_EPS;
@@ -109,7 +109,7 @@ int main()
     std::string directoryname = "results";
     std::string filenameWithoutStep = "shock_tube";
     std::ofstream logfile("log.txt");
-    int recordStep = 100;
+    int recordStep = 1;
 
     IdealMHD1D idealMHD1D;
 

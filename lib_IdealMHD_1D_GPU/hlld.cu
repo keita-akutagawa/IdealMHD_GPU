@@ -56,15 +56,15 @@ struct CalculateFluxFunctor {
             double S1R = hLLDParameter.S1R;
 
             auto calculateFluxComponent = [&](
-                double outerLeft, double middleLeft, double innerLeft,
-                double outerRight, double middleRight, double innerRight
+                double outerLeftFlux, double middleLeftFlux, double innerLeftFlux,
+                double outerRightFlux, double middleRightFlux, double innerRightFlux
             ) {
-                return outerLeft * (SL > 0.0)
-                     + middleLeft * ((SL <= 0.0) && (0.0 < S1L))
-                     + innerLeft * ((S1L <= 0.0) && (0.0 < SM))
-                     + outerRight * (SR <= 0.0)
-                     + middleRight * ((S1R <= 0.0) && (0.0 < SR))
-                     + innerRight * ((SM <= 0.0) && (0.0 < S1R));
+                return outerLeftFlux   * (SL > 0.0)
+                     + middleLeftFlux  * ((SL <= 0.0) && (0.0 < S1L))
+                     + innerLeftFlux   * ((S1L <= 0.0) && (0.0 < SM))
+                     + outerRightFlux  * (SR <= 0.0)
+                     + middleRightFlux * ((S1R <= 0.0) && (0.0 < SR))
+                     + innerRightFlux  * ((SM <= 0.0) && (0.0 < S1R));
             };
 
             flux.f0 = calculateFluxComponent(
