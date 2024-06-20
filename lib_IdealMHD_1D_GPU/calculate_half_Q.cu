@@ -2,10 +2,10 @@
 
 
 CalculateHalfQ::CalculateHalfQ()
+    : dQCenter(nx), 
+      dQLeft(nx), 
+      dQRight(nx)
 {
-    dQCenter(device_nx);
-    dQLeft(device_nx);
-    dQRight(dvice_nx);
 }
 
 

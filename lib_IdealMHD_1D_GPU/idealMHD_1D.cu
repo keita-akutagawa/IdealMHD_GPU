@@ -8,11 +8,11 @@
 
 
 IdealMHD1D::IdealMHD1D()
+    : fluxF(nx),
+      U(nx),
+      UBar(nx), 
+      hU(nx)
 {
-    fluxF(device_nx);
-    U(device_nx);
-    UBar(device_nx); 
-    hU(device_nx);
 }
 
 
@@ -112,7 +112,6 @@ void IdealMHD1D::save(
     int step
 )
 {
-    std::cout << "AAA";
     hU = U;
 
     std::string filename;
@@ -122,7 +121,6 @@ void IdealMHD1D::save(
 
     std::ofstream ofs(filename);
     ofs << std::fixed << std::setprecision(6);
-    std::cout << "AAA";
 
     for (int i = 0; i < nx - 1; i++) {
         ofs << hU[i].rho << ',' 
@@ -142,8 +140,6 @@ void IdealMHD1D::save(
         << hU[nx - 1].bY << ','
         << hU[nx - 1].bZ << ','
         << hU[nx - 1].e;
-    
-    std::cout << "AAA";
 }
 
 

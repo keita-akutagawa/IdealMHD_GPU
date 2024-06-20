@@ -20,7 +20,7 @@ $(MAIN): main_wave.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(EXECUTABLE)
-	./$(EXECUTABLE)
+	$(EXECUTABLE)
 
 clean:
 	rm -f $(OBJS) $(MAIN) $(EXECUTABLE)
