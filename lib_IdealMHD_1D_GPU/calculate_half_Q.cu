@@ -1,6 +1,14 @@
 #include "calculate_half_Q.hpp"
 
 
+CalculateHalfQ::CalculateHalfQ()
+{
+    dQCenter(device_nx);
+    dQLeft(device_nx);
+    dQRight(dvice_nx);
+}
+
+
 struct GetBasicParamterFunctor {
 
     __device__

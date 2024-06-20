@@ -16,6 +16,7 @@ private:
     MUSCL muscl;
 
 public:
+    CalculateHalfQ();
 
     void setPhysicalParameters(
         const thrust::device_vector<ConservationParameter>& U

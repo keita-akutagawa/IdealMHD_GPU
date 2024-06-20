@@ -4,6 +4,23 @@
 #include <thrust/tuple.h>
 
 
+HLLD::HLLD()
+{
+    dQCenter(device_nx);
+    dQLeft(device_nx);
+    dQRight(device_nx);
+    hLLDParameter(device_nx);
+
+    flux(device_nx);
+    fluxOuterLeft(device_nx);
+    fluxMiddleLeft(device_nx);
+    fluxInnerLeft(device_nx);
+    fluxOuterRight(device_nx);
+    fluxMiddleRight(device_nx);
+    fluxInnerRight(device_nx);
+}
+
+
 struct Sign {
 
     __device__

@@ -20,6 +20,7 @@ private:
     thrust::device_vector<Flux> fluxOuterRight, fluxMiddleRight, fluxInnerRight;
 
 public:
+    HLLD();
 
     void calculateFlux(
         const thrust::device_vector<ConservationParameter>& U

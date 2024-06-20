@@ -7,6 +7,15 @@
 #include "idealMHD_1D.hpp"
 
 
+IdealMHD1D::IdealMHD1D()
+{
+    fluxF(device_nx);
+    U(device_nx);
+    UBar(device_nx); 
+    hU(device_nx);
+}
+
+
 struct oneStepFirstFunctor {
 
     __device__
@@ -104,7 +113,7 @@ void IdealMHD1D::save(
 )
 {
     std::cout << "AAA";
-    thrust::host_vector<ConservationParameter> hU = U;
+    hU = U;
 
     std::string filename;
     filename = directoryname + "/"
