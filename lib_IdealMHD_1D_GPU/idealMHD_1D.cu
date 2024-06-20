@@ -176,7 +176,6 @@ struct calculateDtFunctor {
 
 void IdealMHD1D::calculateDt()
 {
-    std::cout << "AAA";
     thrust::transform(
         U.begin(), 
         U.end(), 
