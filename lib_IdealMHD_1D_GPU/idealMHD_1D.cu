@@ -12,6 +12,7 @@ IdealMHD1D::IdealMHD1D()
     : fluxF(nx),
       U(nx),
       UBar(nx), 
+      dtVector(nx),
       hU(nx)
 {
 }
@@ -147,18 +148,18 @@ void IdealMHD1D::save(
 struct calculateDtFunctor {
 
     __device__
-    double operator()(const ConservationParameter U) const {
+    double operator()(const ConservationParameter& conservationParameter) const {
         double rho, u, v, w, bX, bY, bZ, e, p, cs, ca;
-        double maxSpeed, dt;
+        double maxSpeed;
 
-        rho = U.rho;
-        u = U.rhoU / rho;
-        v = U.rhoV / rho;
-        w = U.rhoW / rho;
-        bX = U.bX;
-        bY = U.bY;
-        bZ = U.bZ;
-        e = U.e;
+        rho = conservationParameter.rho;
+        u = conservationParameter.rhoU / rho;
+        v = conservationParameter.rhoV / rho;
+        w = conservationParameter.rhoW / rho;
+        bX = conservationParameter.bX;
+        bY = conservationParameter.bY;
+        bZ = conservationParameter.bZ;
+        e = conservationParameter.e;
         p = (device_gamma_mhd - 1.0)
           * (e - 0.5 * rho * (u * u + v * v + w * w)
           - 0.5 * (bX * bX + bY * bY + bZ * bZ));
@@ -167,15 +168,15 @@ struct calculateDtFunctor {
         ca = sqrt((bX * bX + bY * bY + bZ * bZ) / rho);
 
         maxSpeed = std::abs(u) + sqrt(cs * cs + ca * ca);
-        dt = 1.0 / (maxSpeed / device_dx + device_EPS);
 
-        return dt;
+        return 1.0 / (maxSpeed / device_dx + device_EPS);
     }
 };
 
 
 void IdealMHD1D::calculateDt()
 {
+    std::cout << "AAA";
     thrust::transform(
         U.begin(), 
         U.end(), 
@@ -185,7 +186,8 @@ void IdealMHD1D::calculateDt()
 
     thrust::device_vector<double>::iterator dtMin = thrust::min_element(dtVector.begin(), dtVector.end());
     
-    dt =  (*dtMin) * CFL;
+    dt = (*dtMin) * CFL;
+    cudaMemcpyToSymbol(device_dt, &dt, sizeof(double));
 }
 
 
