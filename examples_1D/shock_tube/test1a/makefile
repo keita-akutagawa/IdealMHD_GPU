@@ -4,7 +4,7 @@ SRCDIR = ../../../lib_IdealMHD_1D_GPU
 SOURCES = $(wildcard $(SRCDIR)/*.cu)
 OBJS = $(patsubst $(SRCDIR)/%.cu, $(SRCDIR)/%.o, $(SOURCES))
 MAIN = main_shock_tube.o
-EXECUTABLE = program
+EXECUTABLE = program.exe
 
 .PHONY: all clean
 
@@ -20,7 +20,7 @@ $(MAIN): main_shock_tube.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(EXECUTABLE)
-	./$(EXECUTABLE)
+	$(EXECUTABLE)
 
 clean:
 	rm -f $(OBJS) $(MAIN) $(EXECUTABLE)

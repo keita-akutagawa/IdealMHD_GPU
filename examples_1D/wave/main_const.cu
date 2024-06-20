@@ -68,7 +68,6 @@ void IdealMHD1D::initializeU()
         + 0.5 * (bX0 * bX0 + bY0 * bY0 + bZ0 * bZ0);
 
     
-
     int threadsPerBlock = 256;
     int blocksPerGrid = (nx + threadsPerBlock - 1) / threadsPerBlock;
 

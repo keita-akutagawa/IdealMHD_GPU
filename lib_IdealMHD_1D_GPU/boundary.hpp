@@ -9,7 +9,7 @@ private:
 
 public:
 
-    void periodicBoundary(
+    void periodicBoundary2nd(
         thrust::device_vector<ConservationParameter>& U
     );
 

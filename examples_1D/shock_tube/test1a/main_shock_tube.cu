@@ -15,7 +15,7 @@ const double xmax = 1.0;
 const int nx = int((xmax - xmin) / dx);
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
-double dt = 0.0;
+double dt = dx / CFL;
 const int totalStep = 1000;
 double totalTime = 0.0;
 

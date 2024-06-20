@@ -3,8 +3,8 @@ CFLAGS = -rdc=true -Xcompiler "/wd 4819"
 SRCDIR = ../../lib_IdealMHD_1D_GPU
 SOURCES = $(wildcard $(SRCDIR)/*.cu)
 OBJS = $(patsubst $(SRCDIR)/%.cu, $(SRCDIR)/%.o, $(SOURCES))
-MAIN = main_wave.o
-EXECUTABLE = program
+MAIN = main_const.o
+EXECUTABLE = program.exe
 
 .PHONY: all clean
 
@@ -16,7 +16,7 @@ $(EXECUTABLE): $(OBJS) $(MAIN)
 $(SRCDIR)/%.o: $(SRCDIR)/%.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(MAIN): main_wave.cu
+$(MAIN): main_const.cu
 	$(CC) $(CFLAGS) -c $< -o $@
 
 run: $(EXECUTABLE)
