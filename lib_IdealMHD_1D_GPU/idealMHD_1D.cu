@@ -103,7 +103,8 @@ void IdealMHD1D::save(
     int step
 )
 {
-    hU = U;
+    std::cout << "AAA";
+    thrust::host_vector<ConservationParameter> hU = U;
 
     std::string filename;
     filename = directoryname + "/"
@@ -112,6 +113,7 @@ void IdealMHD1D::save(
 
     std::ofstream ofs(filename);
     ofs << std::fixed << std::setprecision(6);
+    std::cout << "AAA";
 
     for (int i = 0; i < nx - 1; i++) {
         ofs << hU[i].rho << ',' 
@@ -131,6 +133,8 @@ void IdealMHD1D::save(
         << hU[nx - 1].bY << ','
         << hU[nx - 1].bZ << ','
         << hU[nx - 1].e;
+    
+    std::cout << "AAA";
 }
 
 

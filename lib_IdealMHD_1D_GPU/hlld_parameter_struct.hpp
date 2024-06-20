@@ -54,7 +54,7 @@ struct HLLDParameter
     double pT2R;
     
 
-    __device__
+    __host__ __device__
     HLLDParameter() :
         pTL(0.0),
         pTR(0.0),

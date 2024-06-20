@@ -93,6 +93,7 @@ int main()
     IdealMHD1D idealMHD1D;
 
     idealMHD1D.initializeU();
+    std::cout << "AAA";
 
     for (int step = 0; step < totalStep+1; step++) {
         if (step % recordStep == 0) {
@@ -101,6 +102,7 @@ int main()
                     << std::setprecision(3) << totalTime
                     << std::endl;
         }
+        std::cout << "AAA";
         idealMHD1D.oneStepRK2();
         totalTime += dt;
     }

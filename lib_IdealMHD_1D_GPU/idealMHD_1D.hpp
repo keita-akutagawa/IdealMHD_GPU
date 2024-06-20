@@ -13,9 +13,13 @@ private:
     thrust::device_vector<ConservationParameter> U;
     thrust::device_vector<ConservationParameter> UBar;
     Boundary boundary;
-    thrust::host_vector<ConservationParameter> hU;
 
 public:
+    IdealMHD1D() : 
+        fluxF(device_nx), 
+        U(device_nx), 
+        UBar(device_nx)
+        {}
 
     virtual void initializeU(); 
 
