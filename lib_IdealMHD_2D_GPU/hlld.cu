@@ -16,7 +16,9 @@ HLLD::HLLD()
       fluxInnerLeft(nx * ny),
       fluxOuterRight(nx * ny),
       fluxMiddleRight(nx * ny),
-      fluxInnerRight(nx * ny)
+      fluxInnerRight(nx * ny), 
+
+      tmpUForFluxG(nx * ny)
 {
 }
 
