@@ -73,25 +73,25 @@ struct oneStepSecondFunctor {
                     - device_dt / device_dx * (fluxF.f0 - fluxFMinusNy.f0)
                     - device_dt / device_dy * (fluxG.f0 - fluxGMinus1.f0));
         UNext.rhoU  = 0.5 * (U.rhoU + UBar.rhoU
-                    - device_dt / device_dx * (fluxF.f1 - fluxGMinus1.f1)
+                    - device_dt / device_dx * (fluxF.f1 - fluxFMinusNy.f1)
                     - device_dt / device_dy * (fluxG.f1 - fluxGMinus1.f1));
         UNext.rhoV  = 0.5 * (U.rhoV + UBar.rhoV
-                    - device_dt / device_dx * (fluxF.f2 - fluxGMinus1.f2)
+                    - device_dt / device_dx * (fluxF.f2 - fluxFMinusNy.f2)
                     - device_dt / device_dy * (fluxG.f2 - fluxGMinus1.f2));
         UNext.rhoW  = 0.5 * (U.rhoW + UBar.rhoW
-                    - device_dt / device_dx * (fluxF.f3 - fluxGMinus1.f3)
+                    - device_dt / device_dx * (fluxF.f3 - fluxFMinusNy.f3)
                     - device_dt / device_dy * (fluxG.f3 - fluxGMinus1.f3));
         UNext.bX    = 0.5 * (U.bX + UBar.bX
-                    - device_dt / device_dx * (fluxF.f4 - fluxGMinus1.f4)
+                    - device_dt / device_dx * (fluxF.f4 - fluxFMinusNy.f4)
                     - device_dt / device_dy * (fluxG.f4 - fluxGMinus1.f4));
         UNext.bY    = 0.5 * (U.bY + UBar.bY
-                    - device_dt / device_dx * (fluxF.f5 - fluxGMinus1.f5)
+                    - device_dt / device_dx * (fluxF.f5 - fluxFMinusNy.f5)
                     - device_dt / device_dy * (fluxG.f5 - fluxGMinus1.f5));
         UNext.bZ    = 0.5 * (U.bZ + UBar.bZ
-                    - device_dt / device_dx * (fluxF.f6 - fluxGMinus1.f6)
+                    - device_dt / device_dx * (fluxF.f6 - fluxFMinusNy.f6)
                     - device_dt / device_dy * (fluxG.f6 - fluxGMinus1.f6));
         UNext.e     = 0.5 * (U.e + UBar.e
-                    - device_dt / device_dx * (fluxF.f7 - fluxGMinus1.f7)
+                    - device_dt / device_dx * (fluxF.f7 - fluxFMinusNy.f7)
                     - device_dt / device_dy * (fluxG.f7 - fluxGMinus1.f7));
 
         return UNext;
