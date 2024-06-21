@@ -113,7 +113,7 @@ void HLLD::calculateFluxF(
 {
     setQX(U);
     calculateHLLDParameter();
-    setFluxF();
+    setFlux();
 
     auto tupleForFlux = thrust::make_tuple(
         hLLDParameter.begin(), 
@@ -213,7 +213,7 @@ void HLLD::calculateFluxG(
     shuffleForTmpUForFluxG(U);
     setQY(tmpUForFluxG);
     calculateHLLDParameter();
-    setFluxG();
+    setFlux();
 
     auto tupleForFlux = thrust::make_tuple(
         hLLDParameter.begin(), 
@@ -454,7 +454,7 @@ void HLLD::calculateHLLDParameter()
 ///////////////////////////////////////////
 
 __device__ 
-Flux getOneFluxF(
+Flux getOneFlux(
     double rho, double u, double v, double w, 
     double bX, double bY, double bZ, 
     double e, double pT
@@ -474,7 +474,7 @@ Flux getOneFluxF(
     return flux;
 };
 
-struct setFluxFFunctor {
+struct setFluxFunctor {
 
     __device__
     thrust::tuple<Flux, Flux, Flux, Flux, Flux, Flux> operator()(
@@ -542,12 +542,12 @@ struct setFluxFFunctor {
         pT2L  = hLLDParameter.pT2L;
         pT2R  = hLLDParameter.pT2R;
 
-        fluxOuterLeft   = getOneFluxF(rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL);
-        fluxMiddleLeft  = getOneFluxF(rho1L, u1L, v1L, w1L, bXL, bY1L, bZ1L, e1L, pT1L);
-        fluxInnerLeft   = getOneFluxF(rho2L, u2, v2, w2, bXL, bY2, bZ2, e2L, pT2L);
-        fluxOuterRight  = getOneFluxF(rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR);
-        fluxMiddleRight = getOneFluxF(rho1R, u1R, v1R, w1R, bXR, bY1R, bZ1R, e1R, pT1R);
-        fluxInnerRight  = getOneFluxF(rho2R, u2, v2, w2, bXR, bY2, bZ2, e2R, pT2R);
+        fluxOuterLeft   = getOneFlux(rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL);
+        fluxMiddleLeft  = getOneFlux(rho1L, u1L, v1L, w1L, bXL, bY1L, bZ1L, e1L, pT1L);
+        fluxInnerLeft   = getOneFlux(rho2L, u2, v2, w2, bXL, bY2, bZ2, e2L, pT2L);
+        fluxOuterRight  = getOneFlux(rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR);
+        fluxMiddleRight = getOneFlux(rho1R, u1R, v1R, w1R, bXR, bY1R, bZ1R, e1R, pT1R);
+        fluxInnerRight  = getOneFlux(rho2R, u2, v2, w2, bXR, bY2, bZ2, e2R, pT2R);
 
         return thrust::make_tuple(
             fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft, 
@@ -556,7 +556,7 @@ struct setFluxFFunctor {
     }
 };
 
-void HLLD::setFluxF()
+void HLLD::setFlux()
 {
     auto tupleForFlux = thrust::make_tuple(dQLeft.begin(), dQRight.begin(), hLLDParameter.begin());
     auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
@@ -568,127 +568,7 @@ void HLLD::setFluxF()
             thrust::make_tuple(fluxOuterLeft.begin(), fluxMiddleLeft.begin(), fluxInnerLeft.begin(), 
                                fluxOuterRight.begin(), fluxMiddleRight.begin(), fluxInnerRight.begin())
         ),
-        setFluxFFunctor()
-    );
-}
-
-
-__device__ 
-Flux getOneFluxG(
-    double rho, double u, double v, double w, 
-    double bX, double bY, double bZ, 
-    double e, double pT
-)
-{
-    Flux flux;
-
-    flux.f0 = rho * v;
-    flux.f1 = rho * v * u - bY * bX;
-    flux.f2 = rho * v * v + pT - bY * bY;
-    flux.f3 = rho * v * w - bY * bZ;
-    flux.f4 = v * bX - u * bY;
-    flux.f5 = 0.0;
-    flux.f6 = v * bZ - w * bY;
-    flux.f7 = (e + pT) * v - bY * (bX * u + bY * v + bZ * w);
-    
-    return flux;
-};
-
-struct setFluxGFunctor {
-
-    __device__
-    thrust::tuple<Flux, Flux, Flux, Flux, Flux, Flux> operator()(
-        const thrust::tuple<BasicParameter, BasicParameter, HLLDParameter>& tupleForFlux
-    ) const {
-        BasicParameter dQLeft       = thrust::get<0>(tupleForFlux);
-        BasicParameter dQRight      = thrust::get<1>(tupleForFlux);
-        HLLDParameter hLLDParameter = thrust::get<2>(tupleForFlux);
-
-        double rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL;
-        double rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR;
-        double rho1L, u1L, v1L, w1L, bY1L, bZ1L, e1L, pT1L;
-        double rho1R, u1R, v1R, w1R, bY1R, bZ1R, e1R, pT1R;
-        double rho2L, rho2R, u2, v2, w2, bY2, bZ2, e2L, e2R, pT2L, pT2R;
-        Flux fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
-        Flux fluxOuterRight, fluxMiddleRight, fluxInnerRight;
-    
-    
-        rhoL = dQLeft.rho;
-        uL   = dQLeft.u;
-        vL   = dQLeft.v;
-        wL   = dQLeft.w;
-        bXL  = dQLeft.bX;
-        bYL  = dQLeft.bY;
-        bZL  = dQLeft.bZ;
-        eL   = hLLDParameter.eL;
-        pTL  = hLLDParameter.pTL;
-
-        rhoR = dQRight.rho;
-        uR   = dQRight.u;
-        vR   = dQRight.v;
-        wR   = dQRight.w;
-        bXR  = dQRight.bX;
-        bYR  = dQRight.bY;
-        bZR  = dQRight.bZ;
-        eR   = hLLDParameter.eR;
-        pTR  = hLLDParameter.pTR;
-
-        rho1L = hLLDParameter.rho1L;
-        rho1R = hLLDParameter.rho1R;
-        u1L   = hLLDParameter.u1L;
-        u1R   = hLLDParameter.u1R;
-        v1L   = hLLDParameter.v1L;
-        v1R   = hLLDParameter.v1R;
-        w1L   = hLLDParameter.w1L;
-        w1R   = hLLDParameter.w1R;
-        bY1L  = hLLDParameter.bY1L;
-        bY1R  = hLLDParameter.bY1R;
-        bZ1L  = hLLDParameter.bZ1L;
-        bZ1R  = hLLDParameter.bZ1R;
-        e1L   = hLLDParameter.e1L;
-        e1R   = hLLDParameter.e1R;
-        pT1L  = hLLDParameter.pT1L;
-        pT1R  = hLLDParameter.pT1R;
-
-        rho2L = hLLDParameter.rho2L;
-        rho2R = hLLDParameter.rho2R;
-        u2    = hLLDParameter.u2;
-        v2    = hLLDParameter.v2;
-        w2    = hLLDParameter.w2;
-        bY2   = hLLDParameter.bY2;
-        bZ2   = hLLDParameter.bZ2;
-        e2L   = hLLDParameter.e2L;
-        e2R   = hLLDParameter.e2R;
-        pT2L  = hLLDParameter.pT2L;
-        pT2R  = hLLDParameter.pT2R;
-
-        fluxOuterLeft   = getOneFluxG(rhoL, uL, vL, wL, bXL, bYL, bZL, eL, pTL);
-        fluxMiddleLeft  = getOneFluxG(rho1L, u1L, v1L, w1L, bXL, bY1L, bZ1L, e1L, pT1L);
-        fluxInnerLeft   = getOneFluxG(rho2L, u2, v2, w2, bXL, bY2, bZ2, e2L, pT2L);
-        fluxOuterRight  = getOneFluxG(rhoR, uR, vR, wR, bXR, bYR, bZR, eR, pTR);
-        fluxMiddleRight = getOneFluxG(rho1R, u1R, v1R, w1R, bXR, bY1R, bZ1R, e1R, pT1R);
-        fluxInnerRight  = getOneFluxG(rho2R, u2, v2, w2, bXR, bY2, bZ2, e2R, pT2R);
-
-        return thrust::make_tuple(
-            fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft, 
-            fluxOuterRight, fluxMiddleRight, fluxInnerRight
-        );
-    }
-};
-
-void HLLD::setFluxG()
-{
-    auto tupleForFlux = thrust::make_tuple(dQLeft.begin(), dQRight.begin(), hLLDParameter.begin());
-    auto tupleForFluxIterator = thrust::make_zip_iterator(tupleForFlux);
-
-    thrust::transform(
-        tupleForFluxIterator, 
-        tupleForFluxIterator + nx * ny, 
-        thrust::make_zip_iterator(
-            thrust::make_tuple(fluxOuterLeft.begin(), fluxMiddleLeft.begin(), fluxInnerLeft.begin(), 
-                               fluxOuterRight.begin(), fluxMiddleRight.begin(), fluxInnerRight.begin())
-        ),
-        setFluxGFunctor()
+        setFluxFunctor()
     );
 }
 

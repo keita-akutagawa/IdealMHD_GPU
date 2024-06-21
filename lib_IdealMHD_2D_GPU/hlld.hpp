@@ -46,9 +46,7 @@ private:
 
     void calculateHLLDParameter();
 
-    void setFluxF();
-
-    void setFluxG();
+    void setFlux();
 
     void shuffleForTmpUForFluxG(
         const thrust::device_vector<ConservationParameter>& U
