@@ -2,68 +2,58 @@
 
 
 CT::CT()
-    : EzVector(nx * ny)
+    : EzVector(nx * ny), 
+      oldFluxF(nx * ny), 
+      oldFluxG(nx * ny)
 {
 }
 
 
 void CT::setOldFlux2D(
-    const thrust::device_vector<Flux>& flux
+    const thrust::device_vector<Flux>& fluxF, 
+    const thrust::device_vector<Flux>& fluxG
 )
 {
-    for (int comp = 0; comp < 8; comp++) {
-        for (int i = 0; i < nx; i++) {
-            for (int j = 0; j < ny; j++) {
-                oldFlux2D.fluxF[comp][i][j] = flux2D.fluxF[comp][i][j];
-                oldFlux2D.fluxG[comp][i][j] = flux2D.fluxG[comp][i][j];
-            }
-        }
+    thrust::copy(oldFluxF.begin(), oldFluxF.end(), fluxF.begin());
+    thrust::copy(oldFluxG.begin(), oldFluxG.end(), fluxG.begin());
+}
+
+
+__global__ void divBClean_kernel(
+    const Flux* fluxF, 
+    const Flux* fluxG, 
+    double* EzVector
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < device_nx - 1 && j < device_ny - 1) {
+        double ezF1, ezF2, ezG1, ezG2, ez;
+
+        ezG1 = fluxG[j + i * device_ny].f4;
+        ezG2 = fluxG[j + (i+1) * device_ny].f4;
+        ezF1 = -1.0 * fluxF[j + i * device_ny].f5;
+        ezF2 = -1.0 * fluxF[j + 1 + i * device_ny].f5;
+        ez = 0.25 * (ezG1 + ezG2 + ezF1 + ezF2);
+        EzVector[j + i * device_ny] = ez;
     }
 }
 
 
 void CT::divBClean(
-    const std::vector<std::vector<double>>& bxOld,
-    const std::vector<std::vector<double>>& byOld, 
-    std::vector<std::vector<std::vector<double>>>& U
+    thrust::device_vector<ConservationParameter>& U
 )
 {
-    double ezF1, ezF2, ezG1, ezG2, ez;
-    for (int i = 0; i < nx-1; i++) {
-        for (int j = 0; j < ny-1; j++) {
-            ezG1 = oldFlux2D.fluxG[4][i][j];
-            ezG2 = oldFlux2D.fluxG[4][i+1][j];
-            ezF1 = -1.0 * oldFlux2D.fluxF[5][i][j];
-            ezF2 = -1.0 * oldFlux2D.fluxF[5][i][j+1];
-            ez = 0.25 * (ezG1 + ezG2 + ezF1 + ezF2);
-            EzVector[i][j] = ez;
-        }
-    }
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
-    for (int i = 0; i < nx-1; i++) {
-        ezG1 = oldFlux2D.fluxG[4][i][ny-1];
-        ezG2 = oldFlux2D.fluxG[4][i+1][ny-1];
-        ezF1 = -1.0 * oldFlux2D.fluxF[5][i][ny-1];
-        ezF2 = -1.0 * oldFlux2D.fluxF[5][i][0];
-        ez = 0.25 * (ezG1 + ezG2 + ezF1 + ezF2);
-        EzVector[i][ny-1] = ez;
-    }
-
-    for (int j = 0; j < ny-1; j++) {
-        ezG1 = oldFlux2D.fluxG[4][nx-1][j];
-        ezG2 = oldFlux2D.fluxG[4][0][j];
-        ezF1 = -1.0 * oldFlux2D.fluxF[5][nx-1][j];
-        ezF2 = -1.0 * oldFlux2D.fluxF[5][nx-1][j+1];
-        ez = 0.25 * (ezG1 + ezG2 + ezF1 + ezF2);
-        EzVector[nx-1][j] = ez;
-    }
-
-    ezG1 = oldFlux2D.fluxG[4][nx-1][ny-1];
-    ezG2 = oldFlux2D.fluxG[4][0][ny-1];
-    ezF1 = -1.0 * oldFlux2D.fluxF[5][nx-1][ny-1];
-    ezF2 = -1.0 * oldFlux2D.fluxF[5][nx-1][0];
-    ez = 0.25 * (ezG1 + ezG2 + ezF1 + ezF2);
-    EzVector[nx-1][ny-1] = ez;
+    divBClean_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(oldFluxF.data()), 
+        thrust::raw_pointer_cast(oldFluxG.data()), 
+        thrust::raw_pointer_cast(EzVector.data())
+    );
 
 
     for (int i = 1; i < nx; i++) {
@@ -74,25 +64,6 @@ void CT::divBClean(
                        + dt / dx * (EzVector[i][j] - EzVector[i-1][j]);
         }
     }
-
-    for (int i = 1; i < nx; i++) {
-        U[4][i][0] = bxOld[i][0]
-                    - dt / dy * (EzVector[i][0] - EzVector[i][ny-1]);
-        U[5][i][0] = byOld[i][0]
-                    + dt / dx * (EzVector[i][0] - EzVector[i-1][0]);
-    }
-
-    for (int j = 1; j < ny; j++) {
-        U[4][0][j] = bxOld[0][j]
-                    - dt / dy * (EzVector[0][j] - EzVector[0][j-1]);
-        U[5][0][j] = byOld[0][j]
-                    + dt / dx * (EzVector[0][j] - EzVector[nx-1][j]);
-    }
-
-    U[4][0][0] = bxOld[0][0]
-                - dt / dy * (EzVector[0][0] - EzVector[0][ny-1]);
-    U[5][0][0] = byOld[0][0]
-                + dt / dx * (EzVector[0][0] - EzVector[nx-1][0]);
 
 }
 
