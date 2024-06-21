@@ -12,9 +12,12 @@ CalculateHalfQ::CalculateHalfQ()
 struct GetBasicParamterFunctor {
 
     __device__
-    BasicParameter operator()(const ConservationParameter& conservationParameter) const {
+    BasicParameter operator()(
+        const ConservationParameter& conservationParameter, 
+        const ConservationParameter& conservationParameterPlus1) const {
         BasicParameter dQ;        
         double rho, u, v, w, bX, bY, bZ, e, p;
+        double bXPlus1;
 
         rho = conservationParameter.rho;
         u = conservationParameter.rhoU / rho;
@@ -28,11 +31,13 @@ struct GetBasicParamterFunctor {
           * (e - 0.5 * (rho * (u * u + v * v + w * w))
           - 0.5 * (bX * bX + bY * bY + bZ * bZ));
         
+        bXPlus1 = conservationParameterPlus1.bX;
+        
         dQ.rho = rho;
         dQ.u = u;
         dQ.v = v;
         dQ.w = w;
-        dQ.bX = bX;
+        dQ.bX = 0.5 * (bX + bXPlus1);
         dQ.bY = bY;
         dQ.bZ = bZ;
         dQ.p = p;
@@ -41,13 +46,27 @@ struct GetBasicParamterFunctor {
     }
 };
 
-void CalculateHalfQ::setPhysicalParameters(
+void CalculateHalfQ::setPhysicalParameterX(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
     thrust::transform(
         U.begin(), 
-        U.end(),  
+        U.end() - ny,  
+        U.begin() + ny,
+        dQCenter.begin(),
+        GetBasicParamterFunctor()
+    );
+}
+
+void CalculateHalfQ::setPhysicalParameterY(
+    const thrust::device_vector<ConservationParameter>& U
+)
+{
+    thrust::transform(
+        U.begin(), 
+        U.end() - 1,  
+        U.begin() + 1,
         dQCenter.begin(),
         GetBasicParamterFunctor()
     );

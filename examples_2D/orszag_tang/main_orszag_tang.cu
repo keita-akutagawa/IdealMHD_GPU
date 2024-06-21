@@ -22,7 +22,7 @@ const double dy = (ymax - ymin) / ny;
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
-const int totalStep = 100;
+const int totalStep = 1000;
 double totalTime = 0.0;
 
 __constant__ double device_EPS;

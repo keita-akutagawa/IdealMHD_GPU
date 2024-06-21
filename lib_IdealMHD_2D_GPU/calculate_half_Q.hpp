@@ -18,7 +18,11 @@ private:
 public:
     CalculateHalfQ();
 
-    void setPhysicalParameters(
+    void setPhysicalParameterX(
+        const thrust::device_vector<ConservationParameter>& U
+    );
+
+    void setPhysicalParameterY(
         const thrust::device_vector<ConservationParameter>& U
     );
 

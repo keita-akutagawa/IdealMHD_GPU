@@ -237,7 +237,7 @@ void HLLD::setQX(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    calculateHalfQ.setPhysicalParameters(U);
+    calculateHalfQ.setPhysicalParameterX(U);
     calculateHalfQ.calculateLeftQX();
     calculateHalfQ.calculateRightQX();
 
@@ -251,7 +251,7 @@ void HLLD::setQY(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    calculateHalfQ.setPhysicalParameters(U);
+    calculateHalfQ.setPhysicalParameterY(U);
     calculateHalfQ.calculateLeftQY();
     calculateHalfQ.calculateRightQY();
 
