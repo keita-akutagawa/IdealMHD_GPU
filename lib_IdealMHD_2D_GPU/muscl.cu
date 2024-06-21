@@ -34,12 +34,12 @@ void MUSCL::getLeftQX(
     thrust::device_vector<BasicParameter>& dQLeft
 )
 {
-    auto tupleForLeft = thrust::make_tuple(dQ.begin() - 1, dQ.begin(), dQ.begin() + 1);
+    auto tupleForLeft = thrust::make_tuple(dQ.begin() - ny, dQ.begin(), dQ.begin() + ny);
     auto tupleForLeftIterator = thrust::make_zip_iterator(tupleForLeft);
 
     thrust::transform(
-        tupleForLeftIterator + 1, 
-        tupleForLeftIterator + nx * ny - 1, 
+        tupleForLeftIterator + ny, 
+        tupleForLeftIterator + nx * ny - ny, 
         dQLeft.begin() + 1,
         LeftParameterFunctor()
     );
@@ -51,12 +51,12 @@ void MUSCL::getLeftQY(
     thrust::device_vector<BasicParameter>& dQLeft
 )
 {
-    auto tupleForLeft = thrust::make_tuple(dQ.begin() - ny, dQ.begin(), dQ.begin() + ny);
+    auto tupleForLeft = thrust::make_tuple(dQ.begin() - 1, dQ.begin(), dQ.begin() + 1);
     auto tupleForLeftIterator = thrust::make_zip_iterator(tupleForLeft);
 
     thrust::transform(
-        tupleForLeftIterator + ny, 
-        tupleForLeftIterator + nx * ny - ny, 
+        tupleForLeftIterator + 1, 
+        tupleForLeftIterator + nx * ny - 1, 
         dQLeft.begin() + 1,
         LeftParameterFunctor()
     );
@@ -96,12 +96,12 @@ void MUSCL::getRightQX(
 )
 {
     //thrust::tuple<thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator>
-    auto tupleForRight = thrust::make_tuple(dQ.begin(), dQ.begin() + 1, dQ.begin() + 2);
+    auto tupleForRight = thrust::make_tuple(dQ.begin(), dQ.begin() + ny, dQ.begin() + 2 * ny);
     auto tupleForRightIterator = thrust::make_zip_iterator(tupleForRight);
 
     thrust::transform(
         tupleForRightIterator, 
-        tupleForRightIterator + nx * ny - 2, 
+        tupleForRightIterator + nx * ny - 2 * ny, 
         dQRight.begin(),
         RightParameterFunctor()
     );
@@ -114,12 +114,12 @@ void MUSCL::getRightQY(
 )
 {
     //thrust::tuple<thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator>
-    auto tupleForRight = thrust::make_tuple(dQ.begin(), dQ.begin() + ny, dQ.begin() + 2 * ny);
+    auto tupleForRight = thrust::make_tuple(dQ.begin(), dQ.begin() + 1, dQ.begin() + 2);
     auto tupleForRightIterator = thrust::make_zip_iterator(tupleForRight);
 
     thrust::transform(
         tupleForRightIterator, 
-        tupleForRightIterator + nx * ny - 2 * ny, 
+        tupleForRightIterator + nx * ny - 2, 
         dQRight.begin(),
         RightParameterFunctor()
     );
