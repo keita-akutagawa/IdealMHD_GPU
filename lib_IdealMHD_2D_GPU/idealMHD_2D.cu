@@ -120,7 +120,8 @@ void IdealMHD2D::oneStepRK2()
     );
 
     //これはどうにかすること。保守性が低い
-    boundary.symmetricBoundary2nd(UBar);
+    boundary.periodicBoundaryX2nd(UBar);
+    boundary.periodicBoundaryY2nd(UBar);
 
     fluxF = fluxSolverF.getFluxF(UBar);
     fluxG = fluxSolverG.getFluxG(UBar);
@@ -137,7 +138,8 @@ void IdealMHD2D::oneStepRK2()
     );
 
     //これはどうにかすること。保守性が低い
-    boundary.symmetricBoundary2nd(U);
+    boundary.periodicBoundaryX2nd(U);
+    boundary.periodicBoundaryY2nd(U);
 }
 
 
