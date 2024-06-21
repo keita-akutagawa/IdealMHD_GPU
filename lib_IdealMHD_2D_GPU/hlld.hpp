@@ -19,6 +19,8 @@ private:
     thrust::device_vector<Flux> fluxOuterLeft, fluxMiddleLeft, fluxInnerLeft;
     thrust::device_vector<Flux> fluxOuterRight, fluxMiddleRight, fluxInnerRight;
 
+    thrust::device_vector<ConservationParameter> tmpUForFluxG;
+
 public:
     HLLD();
 
@@ -47,5 +49,11 @@ private:
     void setFluxF();
 
     void setFluxG();
+
+    void shuffleForTmpUForFluxG(
+        const thrust::device_vector<ConservationParameter>& U
+    );
+
+    void shuffleFluxG();
 };
 

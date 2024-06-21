@@ -129,11 +129,87 @@ void HLLD::calculateFluxF(
 }
 
 
+__global__ void shuffleForTmpUForFluxG_kernel(
+    const ConservationParameter* U, 
+    ConservationParameter* tmpU
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < nx && j < ny) {
+        tmpU[j + i * device_ny].rho  = U[j + i * device_ny].rho;
+        tmpU[j + i * device_ny].rhoU = U[j + i * device_ny].rhoV;
+        tmpU[j + i * device_ny].rhoV = U[j + i * device_ny].rhoW;
+        tmpU[j + i * device_ny].rhoW = U[j + i * device_ny].rhoU;
+        tmpU[j + i * device_ny].bX   = U[j + i * device_ny].bY;
+        tmpU[j + i * device_ny].bY   = U[j + i * device_ny].bZ;
+        tmpU[j + i * device_ny].bZ   = U[j + i * device_ny].bX;
+        tmpU[j + i * device_ny].e    = U[j + i * device_ny].e;
+    }
+}
+
+void HLLD::shuffleForTmpUForFluxG(
+    const thrust::device_vector<ConservationParameter>& U
+)
+{
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+    shuffleForTmpUForFluxG_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(U.data()), thrust::raw_pointer_cast(tmpUForFluxG.data())
+    );
+
+    cudaDeviceSynchronize();
+}
+
+
+__global__ void shuffleForFluxG_kernel(
+    Flux* flux
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    double f1, f2, f3, f4, f5, f6;
+
+    if (i < nx && j < ny) {
+        f1 = flux[j + i * device_ny].f1;
+        f2 = flux[j + i * device_ny].f2;
+        f3 = flux[j + i * device_ny].f3;
+        f4 = flux[j + i * device_ny].f4;
+        f5 = flux[j + i * device_ny].f5;
+        f6 = flux[j + i * device_ny].f6;
+
+        flux[j + i * device_ny].f1 = f3;
+        flux[j + i * device_ny].f2 = f1;
+        flux[j + i * device_ny].f3 = f2;
+        flux[j + i * device_ny].f4 = f6;
+        flux[j + i * device_ny].f5 = f4;
+        flux[j + i * device_ny].f6 = f5;
+    }
+}
+
+void HLLD::shuffleFluxG()
+{
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+    shuffleForFluxG_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(flux));
+
+    cudaDeviceSynchronize();
+}
+
+
+//fluxの計算はx方向のものを再利用するため、Uの入れ替えをする
 void HLLD::calculateFluxG(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    setQY(U);
+    shuffleForTmpUForFluxG(U);
+    setQY(tmpUForFluxG);
     calculateHLLDParameter();
     setFluxG();
 
@@ -150,6 +226,8 @@ void HLLD::calculateFluxG(
         flux.begin(), 
         CalculateFluxFunctor()
     );
+
+    shuffleFluxG();
 }
 
 
