@@ -22,7 +22,7 @@ const double dy = (ymax - ymin) / ny;
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
-const int totalStep = 10;
+const int totalStep = 100;
 double totalTime = 0.0;
 
 __constant__ double device_EPS;
@@ -96,7 +96,7 @@ int main()
     std::string directoryname = "results";
     std::string filenameWithoutStep = "orszag_tang";
     std::ofstream logfile("log.txt");
-    int recordStep = 1;
+    int recordStep = 10;
 
 
     IdealMHD2D idealMHD2D;
