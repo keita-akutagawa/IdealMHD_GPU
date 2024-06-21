@@ -6,13 +6,28 @@
 
 class MUSCL
 {
-public:
+private:
+    int nDirection;
 
-    void getLeftComponent(
+public:
+    MUSCL(int nSize) : nDirection(nSize) {}
+
+    void getLeftQX(
         const thrust::device_vector<BasicParameter>& dQ, 
         thrust::device_vector<BasicParameter>& dQLeft
     );
-    void getRightComponent(
+
+    void getLeftQY(
+        const thrust::device_vector<BasicParameter>& dQ, 
+        thrust::device_vector<BasicParameter>& dQLeft
+    );
+
+    void getRightQX(
+        const thrust::device_vector<BasicParameter>& dQ, 
+        thrust::device_vector<BasicParameter>& dQRight
+    );
+
+    void getRightQY(
         const thrust::device_vector<BasicParameter>& dQ, 
         thrust::device_vector<BasicParameter>& dQRight
     );

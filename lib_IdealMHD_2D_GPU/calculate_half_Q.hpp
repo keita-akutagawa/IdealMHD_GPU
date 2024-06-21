@@ -22,9 +22,13 @@ public:
         const thrust::device_vector<ConservationParameter>& U
     );
 
-    void calculateLeftQ();
+    void calculateLeftQX();
 
-    void calculateRightQ();
+    void calculateLeftQY();
+
+    void calculateRightQX();
+
+    void calculateRightQY();
 
     thrust::device_vector<BasicParameter> getCenterQ();
 

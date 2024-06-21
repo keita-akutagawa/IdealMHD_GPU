@@ -29,7 +29,7 @@ struct LeftParameterFunctor {
 };
 
 
-void MUSCL::getLeftComponent(
+void MUSCL::getLeftQX(
     const thrust::device_vector<BasicParameter>& dQ, 
     thrust::device_vector<BasicParameter>& dQLeft
 )
@@ -39,7 +39,24 @@ void MUSCL::getLeftComponent(
 
     thrust::transform(
         tupleForLeftIterator + 1, 
-        tupleForLeftIterator + nx - 1, 
+        tupleForLeftIterator + nx * ny - 1, 
+        dQLeft.begin() + 1,
+        LeftParameterFunctor()
+    );
+}
+
+
+void MUSCL::getLeftQY(
+    const thrust::device_vector<BasicParameter>& dQ, 
+    thrust::device_vector<BasicParameter>& dQLeft
+)
+{
+    auto tupleForLeft = thrust::make_tuple(dQ.begin() - ny, dQ.begin(), dQ.begin() + ny);
+    auto tupleForLeftIterator = thrust::make_zip_iterator(tupleForLeft);
+
+    thrust::transform(
+        tupleForLeftIterator + ny, 
+        tupleForLeftIterator + nx * ny - ny, 
         dQLeft.begin() + 1,
         LeftParameterFunctor()
     );
@@ -73,7 +90,7 @@ struct RightParameterFunctor {
 };
 
 
-void MUSCL::getRightComponent(
+void MUSCL::getRightQX(
     const thrust::device_vector<BasicParameter>& dQ, 
     thrust::device_vector<BasicParameter>& dQRight
 )
@@ -84,7 +101,25 @@ void MUSCL::getRightComponent(
 
     thrust::transform(
         tupleForRightIterator, 
-        tupleForRightIterator + nx - 2, 
+        tupleForRightIterator + nx * ny - 2, 
+        dQRight.begin(),
+        RightParameterFunctor()
+    );
+}
+
+
+void MUSCL::getRightQY(
+    const thrust::device_vector<BasicParameter>& dQ, 
+    thrust::device_vector<BasicParameter>& dQRight
+)
+{
+    //thrust::tuple<thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator, thrust::device_vector<double>::iterator>
+    auto tupleForRight = thrust::make_tuple(dQ.begin(), dQ.begin() + ny, dQ.begin() + 2 * ny);
+    auto tupleForRightIterator = thrust::make_zip_iterator(tupleForRight);
+
+    thrust::transform(
+        tupleForRightIterator, 
+        tupleForRightIterator + nx * ny - 2 * ny, 
         dQRight.begin(),
         RightParameterFunctor()
     );

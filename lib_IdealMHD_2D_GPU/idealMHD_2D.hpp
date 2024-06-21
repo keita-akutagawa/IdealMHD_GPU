@@ -5,11 +5,13 @@
 #include "boundary.hpp"
 
 
-class IdealMHD1D
+class IdealMHD2D
 {
 private:
-    FluxSolver fluxSolver;
+    FluxSolver fluxSolverF;
+    FluxSolver fluxSolverG;
     thrust::device_vector<Flux> fluxF;
+    thrust::device_vector<Flux> fluxG;
     thrust::device_vector<ConservationParameter> U;
     thrust::device_vector<ConservationParameter> UBar;
     thrust::device_vector<double> dtVector;
@@ -17,7 +19,7 @@ private:
     thrust::host_vector<ConservationParameter> hU;
 
 public:
-    IdealMHD1D();
+    IdealMHD2D();
 
     virtual void initializeU(); 
 

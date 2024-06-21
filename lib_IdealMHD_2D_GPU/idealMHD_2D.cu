@@ -5,15 +5,16 @@
 #include <string>
 #include <thrust/extrema.h>
 #include "const.hpp"
-#include "idealMHD_1D.hpp"
+#include "idealMHD_2D.hpp"
 
 
-IdealMHD1D::IdealMHD1D()
-    : fluxF(nx),
-      U(nx),
-      UBar(nx), 
-      dtVector(nx),
-      hU(nx)
+IdealMHD2D::IdealMHD2D()
+    : fluxF(nx * ny),
+      fluxG(nx * ny),
+      U(nx * ny),
+      UBar(nx * ny), 
+      dtVector(nx * ny),
+      hU(nx * ny)
 {
 }
 
@@ -72,13 +73,14 @@ struct oneStepSecondFunctor {
 };
 
 
-void IdealMHD1D::oneStepRK2()
+void IdealMHD2D::oneStepRK2()
 {
     thrust::copy(U.begin(), U.end(), UBar.begin());
 
     calculateDt();
 
-    fluxF = fluxSolver.getFluxF(U);
+    fluxF = fluxSolverF.getFluxF(U);
+    fluxG = fluxSolverG.getFluxG(U);
 
     auto tupleForFluxFirst = thrust::make_tuple(U.begin(), fluxF.begin(), fluxF.begin() - 1);
     auto tupleForFluxFirstIterator = thrust::make_zip_iterator(tupleForFluxFirst);
@@ -92,7 +94,8 @@ void IdealMHD1D::oneStepRK2()
     //これはどうにかすること。保守性が低い
     boundary.symmetricBoundary2nd(UBar);
 
-    fluxF = fluxSolver.getFluxF(UBar);
+    fluxF = fluxSolverF.getFluxF(UBar);
+    fluxG = fluxSolverG.getFluxG(UBar);
 
     auto tupleForFluxSecond = thrust::make_tuple(U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - 1);
     auto tupleForFluxSecondIterator = thrust::make_zip_iterator(tupleForFluxSecond);
@@ -108,7 +111,7 @@ void IdealMHD1D::oneStepRK2()
 }
 
 
-void IdealMHD1D::save(
+void IdealMHD2D::save(
     std::string directoryname, 
     std::string filenameWithoutStep, 
     int step
@@ -174,7 +177,7 @@ struct calculateDtFunctor {
 };
 
 
-void IdealMHD1D::calculateDt()
+void IdealMHD2D::calculateDt()
 {
     thrust::transform(
         U.begin(), 
@@ -191,7 +194,7 @@ void IdealMHD1D::calculateDt()
 
 
 // getter
-thrust::device_vector<ConservationParameter> IdealMHD1D::getU()
+thrust::device_vector<ConservationParameter> IdealMHD2D::getU()
 {
     return U;
 }

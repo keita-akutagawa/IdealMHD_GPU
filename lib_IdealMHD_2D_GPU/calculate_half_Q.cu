@@ -2,9 +2,9 @@
 
 
 CalculateHalfQ::CalculateHalfQ()
-    : dQCenter(nx), 
-      dQLeft(nx), 
-      dQRight(nx)
+    : dQCenter(nx * ny), 
+      dQLeft(nx * ny), 
+      dQRight(nx * ny)
 {
 }
 
@@ -54,17 +54,32 @@ void CalculateHalfQ::setPhysicalParameters(
 }
 
 
-void CalculateHalfQ::calculateLeftQ()
+void CalculateHalfQ::calculateLeftQX()
 { 
-    muscl.getLeftComponent(dQCenter, dQLeft);
+    muscl.getLeftQX(dQCenter, dQLeft);
 }
 
 
-void CalculateHalfQ::calculateRightQ()
+void CalculateHalfQ::calculateLeftQY()
 { 
-    muscl.getRightComponent(dQCenter, dQRight);
+    muscl.getLeftQY(dQCenter, dQLeft);
 }
 
+
+void CalculateHalfQ::calculateRightQX()
+{ 
+    muscl.getRightQX(dQCenter, dQRight);
+}
+
+
+void CalculateHalfQ::calculateRightQY()
+{ 
+    muscl.getRightQY(dQCenter, dQRight);
+}
+
+
+
+// getter
 
 thrust::device_vector<BasicParameter> CalculateHalfQ::getCenterQ()
 {

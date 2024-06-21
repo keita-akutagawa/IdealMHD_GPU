@@ -22,7 +22,11 @@ private:
 public:
     HLLD();
 
-    void calculateFlux(
+    void calculateFluxF(
+        const thrust::device_vector<ConservationParameter>& U
+    );
+
+    void calculateFluxG(
         const thrust::device_vector<ConservationParameter>& U
     );
 
@@ -30,12 +34,18 @@ public:
 
 private:
 
-    void setComponents(
+    void setQX(
+        const thrust::device_vector<ConservationParameter>& U
+    );
+
+    void setQY(
         const thrust::device_vector<ConservationParameter>& U
     );
 
     void calculateHLLDParameter();
 
-    void setFlux();
+    void setFluxF();
+
+    void setFluxG();
 };
 
