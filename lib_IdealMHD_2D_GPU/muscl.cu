@@ -40,7 +40,7 @@ void MUSCL::getLeftQX(
     thrust::transform(
         tupleForLeftIterator + ny, 
         tupleForLeftIterator + nx * ny - ny, 
-        dQLeft.begin() + 1,
+        dQLeft.begin() + ny,
         LeftParameterFunctor()
     );
 }
