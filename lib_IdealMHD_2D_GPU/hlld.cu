@@ -137,7 +137,7 @@ __global__ void shuffleForTmpUForFluxG_kernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (i < nx && j < ny) {
+    if (i < device_nx && j < device_ny) {
         tmpU[j + i * device_ny].rho  = U[j + i * device_ny].rho;
         tmpU[j + i * device_ny].rhoU = U[j + i * device_ny].rhoV;
         tmpU[j + i * device_ny].rhoV = U[j + i * device_ny].rhoW;
@@ -174,7 +174,7 @@ __global__ void shuffleForFluxG_kernel(
 
     double f1, f2, f3, f4, f5, f6;
 
-    if (i < nx && j < ny) {
+    if (i < device_nx && j < device_ny) {
         f1 = flux[j + i * device_ny].f1;
         f2 = flux[j + i * device_ny].f2;
         f3 = flux[j + i * device_ny].f3;
@@ -197,7 +197,7 @@ void HLLD::shuffleFluxG()
     dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
                        (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
-    shuffleForFluxG_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(flux));
+    shuffleForFluxG_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(flux.data()));
 
     cudaDeviceSynchronize();
 }

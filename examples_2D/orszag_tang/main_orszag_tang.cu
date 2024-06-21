@@ -52,7 +52,7 @@ __global__ void initializeU_kernel(ConservationParameter* U)
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (i < nx && j < ny) {
+    if (i < device_nx && j < device_ny) {
         double rho0 = device_gamma_mhd * device_gamma_mhd;
         double u0 = -sin(j * device_dy);
         double v0 = sin(i * device_dx);
@@ -65,14 +65,14 @@ __global__ void initializeU_kernel(ConservationParameter* U)
                  + 0.5 * rho0 * (u0 * u0 + v0 * v0 + w0 * w0)
                  + 0.5 * (bx0 * bx0 + by0 * by0 + bz0 * bz0);
         
-        U[j + i * ny].rho  = rho0;
-        U[j + i * ny].rhoU = rho0 * u0;
-        U[j + i * ny].rhoV = rho0 * v0;
-        U[j + i * ny].rhoW = rho0 * w0;
-        U[j + i * ny].bX   = bx0;
-        U[j + i * ny].bY   = by0;
-        U[j + i * ny].bZ   = bz0;
-        U[j + i * ny].e    = e0;
+        U[j + i * device_ny].rho  = rho0;
+        U[j + i * device_ny].rhoU = rho0 * u0;
+        U[j + i * device_ny].rhoV = rho0 * v0;
+        U[j + i * device_ny].rhoW = rho0 * w0;
+        U[j + i * device_ny].bX   = bx0;
+        U[j + i * device_ny].bY   = by0;
+        U[j + i * device_ny].bZ   = bz0;
+        U[j + i * device_ny].e    = e0;
     }
 }
 
