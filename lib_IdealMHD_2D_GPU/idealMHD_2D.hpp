@@ -34,6 +34,8 @@ public:
     thrust::device_vector<ConservationParameter> getU();
 
     void calculateDt();
+
+    bool checkCalculationIsCrashed();
 };
 
 

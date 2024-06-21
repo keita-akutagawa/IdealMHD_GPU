@@ -7,10 +7,8 @@
 class MUSCL
 {
 private:
-    int nDirection;
 
 public:
-    MUSCL(int nSize) : nDirection(nSize) {}
 
     void getLeftQX(
         const thrust::device_vector<BasicParameter>& dQ, 

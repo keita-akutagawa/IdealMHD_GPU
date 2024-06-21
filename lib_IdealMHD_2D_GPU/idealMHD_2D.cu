@@ -171,7 +171,7 @@ void IdealMHD2D::save(
                 << hU[j + i * ny].e << '\n';
         }
     }
-    for (int j = 0; j < ny; j++) {
+    for (int j = 0; j < ny - 1; j++) {
         ofs << hU[j + (nx - 1) * ny].rho << ',' 
             << hU[j + (nx - 1) * ny].rhoU << ',' 
             << hU[j + (nx - 1) * ny].rhoV << ','
@@ -179,8 +179,16 @@ void IdealMHD2D::save(
             << hU[j + (nx - 1) * ny].bX << ','
             << hU[j + (nx - 1) * ny].bY << ','
             << hU[j + (nx - 1) * ny].bZ << ','
-            << hU[j + (nx - 1) * ny].e;
+            << hU[j + (nx - 1) * ny].e << '\n';
     }
+    ofs << hU[ny - 1 + (nx - 1) * ny].rho << ',' 
+        << hU[ny - 1 + (nx - 1) * ny].rhoU << ',' 
+        << hU[ny - 1 + (nx - 1) * ny].rhoV << ','
+        << hU[ny - 1 + (nx - 1) * ny].rhoW << ','
+        << hU[ny - 1 + (nx - 1) * ny].bX << ','
+        << hU[ny - 1 + (nx - 1) * ny].bY << ','
+        << hU[ny - 1 + (nx - 1) * ny].bZ << ','
+        << hU[ny - 1 + (nx - 1) * ny].e << '\n';
     
 }
 
@@ -228,6 +236,24 @@ void IdealMHD2D::calculateDt()
     
     dt = (*dtMin) * CFL;
     cudaMemcpyToSymbol(device_dt, &dt, sizeof(double));
+}
+
+
+struct IsNan
+{
+    __device__ 
+    bool operator()(const ConservationParameter U) const {
+        return isnan(U.e); // 何かが壊れたらeは壊れるから
+    }
+};
+
+bool IdealMHD2D::checkCalculationIsCrashed()
+{
+    bool result = thrust::transform_reduce(
+        U.begin(), U.end(), IsNan(), false, thrust::logical_or<bool>()
+    );
+
+    return result;
 }
 
 
