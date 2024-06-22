@@ -149,8 +149,8 @@ void IdealMHD2D::oneStepRK2()
     calculateDt();
 
     shiftUToCenterForCT(U);
-    fluxF = fluxSolverF.getFluxF(U);
-    fluxG = fluxSolverG.getFluxG(U);
+    fluxF = fluxSolver.getFluxF(U);
+    fluxG = fluxSolver.getFluxG(U);
     backUToCenterHalfForCT(U);
 
     auto tupleForFluxFirst = thrust::make_tuple(
@@ -172,8 +172,8 @@ void IdealMHD2D::oneStepRK2()
     boundary.periodicBoundaryY2nd(UBar);
 
     shiftUToCenterForCT(UBar);
-    fluxF = fluxSolverF.getFluxF(UBar);
-    fluxG = fluxSolverG.getFluxG(UBar);
+    fluxF = fluxSolver.getFluxF(UBar);
+    fluxG = fluxSolver.getFluxG(UBar);
     backUToCenterHalfForCT(UBar);
 
     auto tupleForFluxSecond = thrust::make_tuple(

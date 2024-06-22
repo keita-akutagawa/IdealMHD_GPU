@@ -9,8 +9,7 @@
 class IdealMHD2D
 {
 private:
-    FluxSolver fluxSolverF;
-    FluxSolver fluxSolverG;
+    FluxSolver fluxSolver;
     thrust::device_vector<Flux> fluxF;
     thrust::device_vector<Flux> fluxG;
     thrust::device_vector<ConservationParameter> U;
