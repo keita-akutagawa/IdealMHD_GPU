@@ -2,6 +2,7 @@
 #include <thrust/host_vector.h>
 #include <string>
 #include "flux_solver.hpp"
+#include "ct.hpp"
 #include "boundary.hpp"
 
 
@@ -16,6 +17,10 @@ private:
     thrust::device_vector<ConservationParameter> UBar;
     thrust::device_vector<double> dtVector;
     Boundary boundary;
+    CT ct;
+    thrust::device_vector<double> bXOld;
+    thrust::device_vector<double> bYOld;
+    thrust::device_vector<double> tmpVector;
     thrust::host_vector<ConservationParameter> hU;
 
 public:
@@ -36,6 +41,15 @@ public:
     void calculateDt();
 
     bool checkCalculationIsCrashed();
+
+private:
+    void shiftUToCenterForCT(
+        thrust::device_vector<ConservationParameter> U
+    );
+
+    void backUToCenterHalfForCT(
+        thrust::device_vector<ConservationParameter> U
+    );
 };
 
 

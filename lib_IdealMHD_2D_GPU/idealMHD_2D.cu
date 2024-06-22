@@ -101,12 +101,26 @@ struct oneStepSecondFunctor {
 
 void IdealMHD2D::oneStepRK2()
 {
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+    copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bXOld.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+    copyBY_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bYOld.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
     thrust::copy(U.begin(), U.end(), UBar.begin());
 
     calculateDt();
 
+    shiftUToCenterForCT(U);
     fluxF = fluxSolverF.getFluxF(U);
     fluxG = fluxSolverG.getFluxG(U);
+    backUToCenterHalfForCT(U);
 
     auto tupleForFluxFirst = thrust::make_tuple(
         U.begin(), fluxF.begin(), fluxF.begin() - ny, fluxG.begin(), fluxG.begin() - 1
@@ -119,12 +133,17 @@ void IdealMHD2D::oneStepRK2()
         oneStepFirstFunctor()
     );
 
+    ct.setOldFlux2D(fluxF, fluxG);
+    ct.divBClean(bXOld, bYOld, UBar);
+
     //これはどうにかすること。保守性が低い
     boundary.periodicBoundaryX2nd(UBar);
     boundary.periodicBoundaryY2nd(UBar);
 
+    shiftUToCenterForCT(UBar);
     fluxF = fluxSolverF.getFluxF(UBar);
     fluxG = fluxSolverG.getFluxG(UBar);
+    backUToCenterHalfForCT(UBar);
 
     auto tupleForFluxSecond = thrust::make_tuple(
         U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - ny, fluxG.begin(), fluxG.begin() - 1
@@ -136,6 +155,8 @@ void IdealMHD2D::oneStepRK2()
         U.begin() + ny, 
         oneStepSecondFunctor()
     );
+
+    ct.divBClean(bXOld, bYOld, U);
 
     //これはどうにかすること。保守性が低い
     boundary.periodicBoundaryX2nd(U);
@@ -255,6 +276,150 @@ bool IdealMHD2D::checkCalculationIsCrashed()
 
     return result;
 }
+
+/////////////////////
+
+__global__ void copyBX_kernel(
+    double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < device_nx && j < device_ny) {
+        tmp[j + i * device_ny] = U[j + i * device_ny].bX;
+    }
+}
+
+__global__ void copyBY_kernel(
+    double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < device_nx && j < device_ny) {
+        tmp[j + i * device_ny] = U[j + i * device_ny].bY;
+    }
+}
+
+__global__ void shiftBXToCenterForCT_kernel(
+    const double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((0 < i) && (i < device_nx) && (j < device_ny)) {
+        U[j + i * device_ny].bX = 0.5 * (tmp[j + i * device_ny] + tmp[j + (i - 1) * device_ny]);
+    }
+}
+
+__global__ void shiftBYToCenterForCT_kernel(
+    const double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((i < device_nx) && (0 < j) && (j < device_ny)) {
+        U[j + i * device_ny].bY = 0.5 * (tmp[j + i * device_ny] + tmp[j - 1 + i * device_ny]);
+    }
+}
+
+
+void IdealMHD2D::shiftUToCenterForCT(
+    thrust::device_vector<ConservationParameter> U
+)
+{
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+
+    copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+    
+    shiftBXToCenterForCT_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+
+    copyBY_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+    
+    shiftBYToCenterForCT_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+}
+
+
+__global__ void backBXToCenterForCT_kernel(
+    const double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((i < device_nx - 1) && (j < device_ny)) {
+        U[j + i * device_ny].bX = 0.5 * (tmp[j + i * device_ny] + tmp[j + (i + 1) * device_ny]);
+    }
+}
+
+__global__ void backBYToCenterForCT_kernel(
+    const double* tmp, 
+    ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if ((i < device_nx) && (j < device_ny - 1)) {
+        U[j + i * device_ny].bY = 0.5 * (tmp[j + i * device_ny] + tmp[j + 1 + i * device_ny]);
+    }
+}
+
+
+void IdealMHD2D::backUToCenterHalfForCT(
+    thrust::device_vector<ConservationParameter> U
+)
+{
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (ny + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+
+    copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+    
+    backBXToCenterForCT_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+
+    copyBY_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+    
+    backBYToCenterForCT_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(tmpVector.data()), 
+        thrust::raw_pointer_cast(U.data())
+    );
+}
+
 
 
 // getter
