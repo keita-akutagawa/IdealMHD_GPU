@@ -15,11 +15,11 @@ std::ofstream logfile("log.txt");
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
 
-const int nx = 256;
+const int nx = 1024;
 const double xmin = 0.0;
 const double xmax = 2.0 * PI;
 const double dx = (xmax - xmin) / nx;
-const int ny = 256;
+const int ny = 1024;
 const double ymin = 0.0;
 const double ymax = 2.0 * PI;
 const double dy = (ymax - ymin) / ny;
@@ -27,7 +27,7 @@ const double dy = (ymax - ymin) / ny;
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
-const int totalStep = 1000;
+const int totalStep = 100;
 const int recordStep = 10;
 double totalTime = 0.0;
 

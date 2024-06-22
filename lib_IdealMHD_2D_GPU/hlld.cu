@@ -237,13 +237,9 @@ void HLLD::setQX(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    calculateHalfQ.setPhysicalParameterX(U);
-    calculateHalfQ.calculateLeftQX();
-    calculateHalfQ.calculateRightQX();
-
-    dQCenter = calculateHalfQ.getCenterQ();
-    dQLeft = calculateHalfQ.getLeftQ();
-    dQRight = calculateHalfQ.getRightQ();
+    calculateHalfQ.setPhysicalParameterX(U, dQCenter);
+    calculateHalfQ.calculateLeftQX(dQCenter, dQLeft);
+    calculateHalfQ.calculateRightQX(dQCenter, dQRight);
 }
 
 
@@ -251,13 +247,9 @@ void HLLD::setQY(
     const thrust::device_vector<ConservationParameter>& U
 )
 {
-    calculateHalfQ.setPhysicalParameterY(U);
-    calculateHalfQ.calculateLeftQY();
-    calculateHalfQ.calculateRightQY();
-
-    dQCenter = calculateHalfQ.getCenterQ();
-    dQLeft = calculateHalfQ.getLeftQ();
-    dQRight = calculateHalfQ.getRightQ();
+    calculateHalfQ.setPhysicalParameterY(U, dQCenter);
+    calculateHalfQ.calculateLeftQY(dQCenter, dQLeft);
+    calculateHalfQ.calculateRightQY(dQCenter, dQRight);
 }
 
 

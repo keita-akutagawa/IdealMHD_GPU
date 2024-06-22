@@ -9,35 +9,38 @@
 class CalculateHalfQ
 {
 private:
-    thrust::device_vector<BasicParameter> dQCenter;
-    thrust::device_vector<BasicParameter> dQLeft;
-    thrust::device_vector<BasicParameter> dQRight;
-
     MUSCL muscl;
 
 public:
-    CalculateHalfQ();
 
     void setPhysicalParameterX(
-        const thrust::device_vector<ConservationParameter>& U
+        const thrust::device_vector<ConservationParameter>& U, 
+        thrust::device_vector<BasicParameter>& dQCenter
     );
 
     void setPhysicalParameterY(
-        const thrust::device_vector<ConservationParameter>& U
+        const thrust::device_vector<ConservationParameter>& U, 
+        thrust::device_vector<BasicParameter>& dQCenter
     );
 
-    void calculateLeftQX();
+    void calculateLeftQX(
+        const thrust::device_vector<BasicParameter>& dQCenter, 
+        thrust::device_vector<BasicParameter>& dQLeft
+    );
 
-    void calculateLeftQY();
+    void calculateLeftQY(
+        const thrust::device_vector<BasicParameter>& dQCenter, 
+        thrust::device_vector<BasicParameter>& dQLeft
+    );
 
-    void calculateRightQX();
+    void calculateRightQX(
+        const thrust::device_vector<BasicParameter>& dQCenter, 
+        thrust::device_vector<BasicParameter>& dQRight
+    );
 
-    void calculateRightQY();
-
-    thrust::device_vector<BasicParameter> getCenterQ();
-
-    thrust::device_vector<BasicParameter> getLeftQ();
-
-    thrust::device_vector<BasicParameter> getRightQ();
+    void calculateRightQY(
+        const thrust::device_vector<BasicParameter>& dQCenter, 
+        thrust::device_vector<BasicParameter>& dQRight
+    );
 };
 

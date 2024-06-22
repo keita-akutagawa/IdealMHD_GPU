@@ -1,14 +1,6 @@
 #include "calculate_half_Q.hpp"
 
 
-CalculateHalfQ::CalculateHalfQ()
-    : dQCenter(nx * ny), 
-      dQLeft(nx * ny), 
-      dQRight(nx * ny)
-{
-}
-
-
 struct GetBasicParamterFunctor {
 
     __device__
@@ -47,7 +39,8 @@ struct GetBasicParamterFunctor {
 };
 
 void CalculateHalfQ::setPhysicalParameterX(
-    const thrust::device_vector<ConservationParameter>& U
+    const thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<BasicParameter>& dQCenter
 )
 {
     thrust::transform(
@@ -60,7 +53,8 @@ void CalculateHalfQ::setPhysicalParameterX(
 }
 
 void CalculateHalfQ::setPhysicalParameterY(
-    const thrust::device_vector<ConservationParameter>& U
+    const thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<BasicParameter>& dQCenter
 )
 {
     thrust::transform(
@@ -73,47 +67,39 @@ void CalculateHalfQ::setPhysicalParameterY(
 }
 
 
-void CalculateHalfQ::calculateLeftQX()
+void CalculateHalfQ::calculateLeftQX(
+    const thrust::device_vector<BasicParameter>& dQCenter, 
+    thrust::device_vector<BasicParameter>& dQLeft
+)
 { 
     muscl.getLeftQX(dQCenter, dQLeft);
 }
 
 
-void CalculateHalfQ::calculateLeftQY()
+void CalculateHalfQ::calculateLeftQY(
+    const thrust::device_vector<BasicParameter>& dQCenter, 
+    thrust::device_vector<BasicParameter>& dQLeft
+)
 { 
     muscl.getLeftQY(dQCenter, dQLeft);
 }
 
 
-void CalculateHalfQ::calculateRightQX()
+void CalculateHalfQ::calculateRightQX(
+    const thrust::device_vector<BasicParameter>& dQCenter, 
+    thrust::device_vector<BasicParameter>& dQRight
+)
 { 
     muscl.getRightQX(dQCenter, dQRight);
 }
 
 
-void CalculateHalfQ::calculateRightQY()
+void CalculateHalfQ::calculateRightQY(
+    const thrust::device_vector<BasicParameter>& dQCenter, 
+    thrust::device_vector<BasicParameter>& dQRight
+)
 { 
     muscl.getRightQY(dQCenter, dQRight);
 }
 
-
-
-// getter
-
-thrust::device_vector<BasicParameter> CalculateHalfQ::getCenterQ()
-{
-    return dQCenter;
-}
-
-
-thrust::device_vector<BasicParameter> CalculateHalfQ::getLeftQ()
-{
-    return dQLeft;
-}
-
-
-thrust::device_vector<BasicParameter> CalculateHalfQ::getRightQ()
-{
-    return dQRight;
-}
 
