@@ -8,33 +8,32 @@
 #include "../../lib_IdealMHD_2D_GPU_periodicX_symmetricY/idealMHD_2D_periodicX_symmetricY.hpp"
 
 
-std::string directoryname = "results";
+std::string directoryname = "results_highreso";
 std::string filenameWithoutStep = "KH";
-std::ofstream logfile("log_KH.txt");
+std::ofstream logfile("log_KH_highreso.txt");
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
 
 const double gamma_mhd = 5.0 / 3.0;
 
-const double host_shear_thickness = 1.0;
 const double shear_thickness = 1.0;
 const double rr = 0.2;
 const double br = 1.0;
 const double beta = 2.0;
-const double theta = device_PI / 2.0;
+const double theta = PI / 2.0;
 const double rho0 = 1.0;
 const double b0 = 1.0;
 const double p0 = beta * b0 * b0 / 2.0;
-const double v0 = sqrt(b0 * b0 / rho0 + device_gamma_mhd * p0 / rho0);
+const double v0 = sqrt(b0 * b0 / rho0 + gamma_mhd * p0 / rho0);
 
 const double xmin = 0.0;
-const double xmax = 2.0 * PI * host_shear_thickness / 0.4;
-const double dx = host_shear_thickness / 8.0;
+const double xmax = 2.0 * PI * shear_thickness / 0.4;
+const double dx = shear_thickness / 32.0;
 const int nx = int((xmax - xmin) / dx);
 const double ymin = 0.0;
-const double ymax = 2.0 * 10.0 * host_shear_thickness;
-const double dy = host_shear_thickness / 8.0;
+const double ymax = 2.0 * 10.0 * shear_thickness;
+const double dy = shear_thickness / 32.0;
 const int ny = int((ymax - ymin) / dy);
 
 const double xCenter = (xmax - xmin) / 2.0;
@@ -42,7 +41,7 @@ const double yCenter = (ymax - ymin) / 2.0;
 
 const double CFL = 0.7;
 double dt = 0.0;
-const int totalStep = 10000;
+const int totalStep = 30000;
 const int recordStep = 100;
 double totalTime = 0.0;
 

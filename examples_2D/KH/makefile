@@ -1,5 +1,5 @@
 CC = nvcc
-CFLAGS = -rdc=true -Xcompiler "/wd 4819"
+CFLAGS = -O3 -arch=sm_89 -rdc=true -Xcompiler "/wd 4819"
 SRCDIR = ../../lib_IdealMHD_2D_GPU_periodicX_symmetricY
 SOURCES = $(wildcard $(SRCDIR)/*.cu)
 OBJS = $(patsubst $(SRCDIR)/%.cu, $(SRCDIR)/%.o, $(SOURCES))
