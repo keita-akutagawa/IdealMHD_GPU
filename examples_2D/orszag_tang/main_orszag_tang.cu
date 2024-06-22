@@ -8,18 +8,18 @@
 #include "../../lib_IdealMHD_2D_GPU/idealMHD_2D.hpp"
 
 
-std::string directoryname = "results_256";
+std::string directoryname = "results_1024";
 std::string filenameWithoutStep = "orszag_tang";
-std::ofstream logfile("log_256.txt");
+std::ofstream logfile("log_1024.txt");
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
 
-const int nx = 256;
+const int nx = 1024;
 const double xmin = 0.0;
 const double xmax = 2.0 * PI;
 const double dx = (xmax - xmin) / nx;
-const int ny = 256;
+const int ny = 1024;
 const double ymin = 0.0;
 const double ymax = 2.0 * PI;
 const double dy = (ymax - ymin) / ny;
@@ -27,8 +27,8 @@ const double dy = (ymax - ymin) / ny;
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
-const int totalStep = 1000;
-const int recordStep = 10;
+const int totalStep = 10000;
+const int recordStep = 100;
 double totalTime = 0.0;
 
 __constant__ double device_EPS;
