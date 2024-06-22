@@ -13,7 +13,7 @@ public:
         thrust::device_vector<ConservationParameter>& U
     );
 
-    void periodicBoundaryY2nd(
+    void symmetricBoundaryY2nd(
         thrust::device_vector<ConservationParameter>& U
     );
 

@@ -54,52 +54,54 @@ void Boundary::periodicBoundaryX2nd(
 
 
 __global__
-void periodicBoundaryY2nd_kernel(ConservationParameter* U)
+void symmetricBoundaryY2nd_kernel(ConservationParameter* U)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    U[0 + i * device_ny].rho  = U[device_ny-4 + i * device_ny].rho;
-    U[0 + i * device_ny].rhoU = U[device_ny-4 + i * device_ny].rhoU;
-    U[0 + i * device_ny].rhoV = U[device_ny-4 + i * device_ny].rhoV;
-    U[0 + i * device_ny].rhoW = U[device_ny-4 + i * device_ny].rhoW;
-    U[0 + i * device_ny].bX   = U[device_ny-4 + i * device_ny].bX;
-    U[0 + i * device_ny].bY   = U[device_ny-4 + i * device_ny].bY;
-    U[0 + i * device_ny].bZ   = U[device_ny-4 + i * device_ny].bZ;
-    U[0 + i * device_ny].e    = U[device_ny-4 + i * device_ny].e;
-    U[1 + i * device_ny].rho  = U[device_ny-3 + i * device_ny].rho;
-    U[1 + i * device_ny].rhoU = U[device_ny-3 + i * device_ny].rhoU;
-    U[1 + i * device_ny].rhoV = U[device_ny-3 + i * device_ny].rhoV;
-    U[1 + i * device_ny].rhoW = U[device_ny-3 + i * device_ny].rhoW;
-    U[1 + i * device_ny].bX   = U[device_ny-3 + i * device_ny].bX;
-    U[1 + i * device_ny].bY   = U[device_ny-3 + i * device_ny].bY;
-    U[1 + i * device_ny].bZ   = U[device_ny-3 + i * device_ny].bZ;
-    U[1 + i * device_ny].e    = U[device_ny-3 + i * device_ny].e;
+    U[0 + i * device_ny].rho  = U[2 + i * device_ny].rho;
+    U[0 + i * device_ny].rhoU = U[2 + i * device_ny].rhoU;
+    U[0 + i * device_ny].rhoV = U[2 + i * device_ny].rhoV;
+    U[0 + i * device_ny].rhoW = U[2 + i * device_ny].rhoW;
+    U[0 + i * device_ny].bX   = U[2 + i * device_ny].bX;
+    U[0 + i * device_ny].bY   = U[2 + i * device_ny].bY;
+    U[0 + i * device_ny].bZ   = U[2 + i * device_ny].bZ;
+    U[0 + i * device_ny].e    = U[2 + i * device_ny].e;
+    U[1 + i * device_ny].rho  = U[2 + i * device_ny].rho;
+    U[1 + i * device_ny].rhoU = U[2 + i * device_ny].rhoU;
+    U[1 + i * device_ny].rhoV = U[2 + i * device_ny].rhoV;
+    U[1 + i * device_ny].rhoW = U[2 + i * device_ny].rhoW;
+    U[1 + i * device_ny].bX   = U[2 + i * device_ny].bX;
+    U[1 + i * device_ny].bY   = U[2 + i * device_ny].bY;
+    U[1 + i * device_ny].bZ   = U[2 + i * device_ny].bZ;
+    U[1 + i * device_ny].e    = U[2 + i * device_ny].e;
 
-    U[device_ny-2 + i * device_ny].rho  = U[2 + i * device_ny].rho;
-    U[device_ny-2 + i * device_ny].rhoU = U[2 + i * device_ny].rhoU;
-    U[device_ny-2 + i * device_ny].rhoV = U[2 + i * device_ny].rhoV;
-    U[device_ny-2 + i * device_ny].rhoW = U[2 + i * device_ny].rhoW;
-    U[device_ny-2 + i * device_ny].bX   = U[2 + i * device_ny].bX;
-    U[device_ny-2 + i * device_ny].bY   = U[2 + i * device_ny].bY;
-    U[device_ny-2 + i * device_ny].bZ   = U[2 + i * device_ny].bZ;
-    U[device_ny-2 + i * device_ny].e    = U[2 + i * device_ny].e;
-    U[device_ny-1 + i * device_ny].rho  = U[3 + i * device_ny].rho;
-    U[device_ny-1 + i * device_ny].rhoU = U[3 + i * device_ny].rhoU;
-    U[device_ny-1 + i * device_ny].rhoV = U[3 + i * device_ny].rhoV;
-    U[device_ny-1 + i * device_ny].rhoW = U[3 + i * device_ny].rhoW;
-    U[device_ny-1 + i * device_ny].bX   = U[3 + i * device_ny].bX;
-    U[device_ny-1 + i * device_ny].bY   = U[3 + i * device_ny].bY;
-    U[device_ny-1 + i * device_ny].bZ   = U[3 + i * device_ny].bZ;
-    U[device_ny-1 + i * device_ny].e    = U[3 + i * device_ny].e;
+    U[device_ny-1 + i * device_ny].rho  = U[device_ny-3 + i * device_ny].rho;
+    U[device_ny-1 + i * device_ny].rhoU = U[device_ny-3 + i * device_ny].rhoU;
+    U[device_ny-1 + i * device_ny].rhoV = U[device_ny-3 + i * device_ny].rhoV;
+    U[device_ny-1 + i * device_ny].rhoW = U[device_ny-3 + i * device_ny].rhoW;
+    U[device_ny-1 + i * device_ny].bX   = U[device_ny-3 + i * device_ny].bX;
+    U[device_ny-1 + i * device_ny].bY   = U[device_ny-3 + i * device_ny].bY;
+    U[device_ny-1 + i * device_ny].bZ   = U[device_ny-3 + i * device_ny].bZ;
+    U[device_ny-1 + i * device_ny].e    = U[device_ny-3 + i * device_ny].e;
+    U[device_ny-2 + i * device_ny].rho  = U[device_ny-3 + i * device_ny].rho;
+    U[device_ny-2 + i * device_ny].rhoU = U[device_ny-3 + i * device_ny].rhoU;
+    U[device_ny-2 + i * device_ny].rhoV = U[device_ny-3 + i * device_ny].rhoV;
+    U[device_ny-2 + i * device_ny].rhoW = U[device_ny-3 + i * device_ny].rhoW;
+    U[device_ny-2 + i * device_ny].bX   = U[device_ny-3 + i * device_ny].bX;
+    U[device_ny-2 + i * device_ny].bY   = U[device_ny-3 + i * device_ny].bY;
+    U[device_ny-2 + i * device_ny].bZ   = U[device_ny-3 + i * device_ny].bZ;
+    U[device_ny-2 + i * device_ny].e    = U[device_ny-3 + i * device_ny].e;
 }
 
-void Boundary::periodicBoundaryY2nd(
+
+void Boundary::symmetricBoundaryY2nd(
     thrust::device_vector<ConservationParameter>& U
 )
 {
     int threadsPerBlock = nx;
     int blocksPerGrid = 1;
 
-    periodicBoundaryY2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(U.data()));
+    symmetricBoundaryY2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(U.data()));
 
     cudaDeviceSynchronize();
 }
+
