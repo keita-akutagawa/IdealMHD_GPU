@@ -14,6 +14,9 @@ IdealMHD2D::IdealMHD2D()
       U(nx * ny),
       UBar(nx * ny), 
       dtVector(nx * ny),
+      bXOld(nx * ny), 
+      bYOld(nx * ny), 
+      tmpVector(nx * ny), 
       hU(nx * ny)
 {
 }
@@ -335,7 +338,7 @@ __global__ void shiftBYToCenterForCT_kernel(
 
 
 void IdealMHD2D::shiftUToCenterForCT(
-    thrust::device_vector<ConservationParameter> U
+    thrust::device_vector<ConservationParameter>& U
 )
 {
     dim3 threadsPerBlock(16, 16);
@@ -393,7 +396,7 @@ __global__ void backBYToCenterForCT_kernel(
 
 
 void IdealMHD2D::backUToCenterHalfForCT(
-    thrust::device_vector<ConservationParameter> U
+    thrust::device_vector<ConservationParameter>& U
 )
 {
     dim3 threadsPerBlock(16, 16);

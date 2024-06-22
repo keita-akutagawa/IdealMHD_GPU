@@ -41,9 +41,6 @@ extern __constant__ double device_gamma_mhd;
 
 extern __device__ double device_dt;
 
-extern __constant__ int device_totalStep;
-extern __device__ double device_totalTime;
-
 
 void initializeDeviceConstants();
 

@@ -7,6 +7,11 @@
 #include "../../lib_IdealMHD_2D_GPU/const.hpp"
 #include "../../lib_IdealMHD_2D_GPU/idealMHD_2D.hpp"
 
+
+std::string directoryname = "results";
+std::string filenameWithoutStep = "orszag_tang";
+std::ofstream logfile("log.txt");
+
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
 
@@ -23,6 +28,7 @@ const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
 const int totalStep = 1000;
+const int recordStep = 10;
 double totalTime = 0.0;
 
 __constant__ double device_EPS;
@@ -42,9 +48,6 @@ __constant__ double device_CFL;
 __constant__ double device_gamma_mhd;
 
 __device__ double device_dt;
-
-__constant__ int device_totalStep;
-__device__ double device_totalTime;
 
 
 __global__ void initializeU_kernel(ConservationParameter* U) 
@@ -92,12 +95,6 @@ void IdealMHD2D::initializeU()
 int main()
 {
     initializeDeviceConstants();
-
-    std::string directoryname = "results";
-    std::string filenameWithoutStep = "orszag_tang";
-    std::ofstream logfile("log.txt");
-    int recordStep = 10;
-
 
     IdealMHD2D idealMHD2D;
 

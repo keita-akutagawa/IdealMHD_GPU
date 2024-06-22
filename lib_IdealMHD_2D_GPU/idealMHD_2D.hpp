@@ -44,11 +44,11 @@ public:
 
 private:
     void shiftUToCenterForCT(
-        thrust::device_vector<ConservationParameter> U
+        thrust::device_vector<ConservationParameter>& U
     );
 
     void backUToCenterHalfForCT(
-        thrust::device_vector<ConservationParameter> U
+        thrust::device_vector<ConservationParameter>& U
     );
 };
 
