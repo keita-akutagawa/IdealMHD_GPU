@@ -206,42 +206,41 @@ void IdealMHD2D::save(
     std::string filename;
     filename = directoryname + "/"
              + filenameWithoutStep + "_" + std::to_string(step)
-             + ".txt";
+             + ".bin";
 
-    std::ofstream ofs(filename);
+    std::ofstream ofs(filename, std::ios::binary);
     ofs << std::fixed << std::setprecision(6);
 
     for (int i = 0; i < nx - 1; i++) {
         for (int j = 0; j < ny; j++) {
-            ofs << hU[j + i * ny].rho << ',' 
-                << hU[j + i * ny].rhoU << ',' 
-                << hU[j + i * ny].rhoV << ','
-                << hU[j + i * ny].rhoW << ','
-                << hU[j + i * ny].bX << ','
-                << hU[j + i * ny].bY << ','
-                << hU[j + i * ny].bZ << ','
-                << hU[j + i * ny].e << '\n';
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].rho), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].rhoU), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].rhoV), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].rhoW), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].bX), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].bY), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].bZ), sizeof(double));
+            ofs.write(reinterpret_cast<const char*>(&hU[j + i * ny].e), sizeof(double));
         }
     }
     for (int j = 0; j < ny - 1; j++) {
-        ofs << hU[j + (nx - 1) * ny].rho << ',' 
-            << hU[j + (nx - 1) * ny].rhoU << ',' 
-            << hU[j + (nx - 1) * ny].rhoV << ','
-            << hU[j + (nx - 1) * ny].rhoW << ','
-            << hU[j + (nx - 1) * ny].bX << ','
-            << hU[j + (nx - 1) * ny].bY << ','
-            << hU[j + (nx - 1) * ny].bZ << ','
-            << hU[j + (nx - 1) * ny].e << '\n';
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].rho), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].rhoU), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].rhoV), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].rhoW), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].bX), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].bY), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].bZ), sizeof(double));
+        ofs.write(reinterpret_cast<const char*>(&hU[j + (nx - 1) * ny].e), sizeof(double));
     }
-    ofs << hU[ny - 1 + (nx - 1) * ny].rho << ',' 
-        << hU[ny - 1 + (nx - 1) * ny].rhoU << ',' 
-        << hU[ny - 1 + (nx - 1) * ny].rhoV << ','
-        << hU[ny - 1 + (nx - 1) * ny].rhoW << ','
-        << hU[ny - 1 + (nx - 1) * ny].bX << ','
-        << hU[ny - 1 + (nx - 1) * ny].bY << ','
-        << hU[ny - 1 + (nx - 1) * ny].bZ << ','
-        << hU[ny - 1 + (nx - 1) * ny].e << '\n';
-    
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].rho), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].rhoU), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].rhoV), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].rhoW), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].bX), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].bY), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].bZ), sizeof(double));
+    ofs.write(reinterpret_cast<const char*>(&hU[ny - 1 + (nx - 1) * ny].e), sizeof(double));
 }
 
 
