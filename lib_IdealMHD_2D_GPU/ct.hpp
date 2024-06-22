@@ -12,6 +12,7 @@ private:
     thrust::device_vector<double> eZVector;
 
 public:
+    CT();
 
     void setOldFlux2D( 
         const thrust::device_vector<Flux>& fluxF, 

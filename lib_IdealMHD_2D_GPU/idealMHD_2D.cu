@@ -19,6 +19,34 @@ IdealMHD2D::IdealMHD2D()
 }
 
 
+
+__global__ void copyBX_kernel(
+    double* tmp, 
+    const ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < device_nx && j < device_ny) {
+        tmp[j + i * device_ny] = U[j + i * device_ny].bX;
+    }
+}
+
+__global__ void copyBY_kernel(
+    double* tmp, 
+    const ConservationParameter* U
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < device_nx && j < device_ny) {
+        tmp[j + i * device_ny] = U[j + i * device_ny].bY;
+    }
+}
+
+
 struct oneStepFirstFunctor {
 
     __device__
@@ -278,32 +306,6 @@ bool IdealMHD2D::checkCalculationIsCrashed()
 }
 
 /////////////////////
-
-__global__ void copyBX_kernel(
-    double* tmp, 
-    ConservationParameter* U
-)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (i < device_nx && j < device_ny) {
-        tmp[j + i * device_ny] = U[j + i * device_ny].bX;
-    }
-}
-
-__global__ void copyBY_kernel(
-    double* tmp, 
-    ConservationParameter* U
-)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (i < device_nx && j < device_ny) {
-        tmp[j + i * device_ny] = U[j + i * device_ny].bY;
-    }
-}
 
 __global__ void shiftBXToCenterForCT_kernel(
     const double* tmp, 

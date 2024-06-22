@@ -14,8 +14,8 @@ void CT::setOldFlux2D(
     const thrust::device_vector<Flux>& fluxG
 )
 {
-    thrust::copy(oldFluxF.begin(), oldFluxF.end(), fluxF.begin());
-    thrust::copy(oldFluxG.begin(), oldFluxG.end(), fluxG.begin());
+    thrust::copy(fluxF.begin(), fluxF.end(), oldFluxF.begin());
+    thrust::copy(fluxG.begin(), fluxG.end(), oldFluxG.begin());
 }
 
 
@@ -29,7 +29,7 @@ __global__ void getEZVector_kernel(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i < device_nx - 1 && j < device_ny - 1) {
-        double eZF1, eZF2, eZG1, eZG2, eZ, eZMinus1;
+        double eZF1, eZF2, eZG1, eZG2, eZ;
 
         eZG1 = fluxG[j + i * device_ny].f4;
         eZG2 = fluxG[j + (i + 1) * device_ny].f4;
@@ -43,7 +43,7 @@ __global__ void getEZVector_kernel(
 
 __global__ void CT_kernel(
     const double* bXOld, const double* bYOld, 
-    const double* eZ, 
+    const double* eZVector, 
     ConservationParameter* U
 )
 {
@@ -52,9 +52,9 @@ __global__ void CT_kernel(
 
     if ((0 < i) && (i < device_nx) && (0 < j) && (j < device_ny)) {
         U[j + i * device_ny].bX = bXOld[j + i * device_ny]
-                                - device_dt / device_dy * (eZ[j + i * device_ny] - eZ[j - 1 + i * device_ny]);
+                                - device_dt / device_dy * (eZVector[j + i * device_ny] - eZVector[j - 1 + i * device_ny]);
         U[j + i * device_ny].bY = bYOld[j + i * device_ny]
-                                + device_dt / device_dx * (eZ[j + i * device_ny] - eZ[j + (i - 1) * device_ny]);
+                                + device_dt / device_dx * (eZVector[j + i * device_ny] - eZVector[j + (i - 1) * device_ny]);
     }
 }
 
