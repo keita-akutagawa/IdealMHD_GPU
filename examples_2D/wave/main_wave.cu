@@ -8,9 +8,9 @@
 #include "../../lib_IdealMHD_2D_GPU/idealMHD_2D.hpp"
 
 
-std::string directoryname = "results_256";
-std::string filenameWithoutStep = "orszag_tang";
-std::ofstream logfile("log_256.txt");
+std::string directoryname = "results";
+std::string filenameWithoutStep = "wave";
+std::ofstream logfile("log.txt");
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
@@ -27,7 +27,7 @@ const double dy = (ymax - ymin) / ny;
 const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
-const int totalStep = 3000;
+const int totalStep = 1000;
 const int recordStep = 10;
 double totalTime = 0.0;
 
@@ -56,12 +56,12 @@ __global__ void initializeU_kernel(ConservationParameter* U)
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i < device_nx && j < device_ny) {
-        double rho0 = device_gamma_mhd * device_gamma_mhd;
-        double u0 = -sin(j * device_dy);
-        double v0 = sin(i * device_dx);
+        double rho0 = 1.0;
+        double u0 = 0.0;
+        double v0 = 0.0;
         double w0 = 0.0;
-        double bx0 = -sin(j * device_dy);
-        double by0 = sin(2.0 * i * device_dx);
+        double bx0 = 0.0;
+        double by0 = 0.0;
         double bz0 = 0.0;
         double p0 = device_gamma_mhd;
         double e0 = p0 / (device_gamma_mhd - 1.0)

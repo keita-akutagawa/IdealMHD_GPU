@@ -44,8 +44,8 @@ void Boundary::periodicBoundaryX2nd(
     thrust::device_vector<ConservationParameter>& U
 )
 {
-    int threadsPerBlock = ny;
-    int blocksPerGrid = 1;
+    int threadsPerBlock = 256; 
+    int blocksPerGrid = (ny + threadsPerBlock - 1) / threadsPerBlock; 
 
     periodicBoundaryX2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(U.data()));
 
@@ -96,8 +96,8 @@ void Boundary::periodicBoundaryY2nd(
     thrust::device_vector<ConservationParameter>& U
 )
 {
-    int threadsPerBlock = nx;
-    int blocksPerGrid = 1;
+    int threadsPerBlock = 256; 
+    int blocksPerGrid = (nx + threadsPerBlock - 1) / threadsPerBlock; 
 
     periodicBoundaryY2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(U.data()));
 

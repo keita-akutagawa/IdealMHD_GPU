@@ -14,6 +14,7 @@ private:
     thrust::device_vector<Flux> fluxG;
     thrust::device_vector<ConservationParameter> U;
     thrust::device_vector<ConservationParameter> UBar;
+    thrust::device_vector<ConservationParameter> tmpU;
     thrust::device_vector<double> dtVector;
     Boundary boundary;
     CT ct;

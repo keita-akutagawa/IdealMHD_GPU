@@ -13,6 +13,7 @@ IdealMHD2D::IdealMHD2D()
       fluxG(nx * ny),
       U(nx * ny),
       UBar(nx * ny), 
+      tmpU(nx * ny), 
       dtVector(nx * ny),
       bXOld(nx * ny), 
       bYOld(nx * ny), 
@@ -176,8 +177,9 @@ void IdealMHD2D::oneStepRK2()
     fluxG = fluxSolver.getFluxG(UBar);
     backUToCenterHalfForCT(UBar);
 
+    thrust::copy(U.begin(), U.end(), tmpU.begin());
     auto tupleForFluxSecond = thrust::make_tuple(
-        U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - ny, fluxG.begin(), fluxG.begin() - 1
+        tmpU.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - ny, fluxG.begin(), fluxG.begin() - 1
     );
     auto tupleForFluxSecondIterator = thrust::make_zip_iterator(tupleForFluxSecond);
     thrust::transform(
