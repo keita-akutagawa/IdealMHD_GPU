@@ -63,7 +63,7 @@ void Boundary::periodicBoundaryX2nd(
 )
 {
     int threadsPerBlock = 256;
-    int blocksPerGrid = (ny + threadsPerBlock - 1) / threadsPerBlock;;
+    int blocksPerGrid = (ny + threadsPerBlock - 1) / threadsPerBlock;
 
     periodicBoundaryX2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(thrust::raw_pointer_cast(U.data()));
 
