@@ -52,6 +52,6 @@ private:
         const thrust::device_vector<ConservationParameter>& U
     );
 
-    void shuffleFluxG();
+    void shuffleForFluxG();
 };
 

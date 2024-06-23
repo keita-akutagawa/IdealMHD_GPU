@@ -24,7 +24,7 @@ IdealMHD2DPeriodicXSymmetricY::IdealMHD2DPeriodicXSymmetricY()
 
 
 __global__ void copyBX_kernel(
-    double* tmp, 
+    double* bOld, 
     const ConservationParameter* U
 )
 {
@@ -32,12 +32,12 @@ __global__ void copyBX_kernel(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i < device_nx && j < device_ny) {
-        tmp[j + i * device_ny] = U[j + i * device_ny].bX;
+        bOld[j + i * device_ny] = U[j + i * device_ny].bX;
     }
 }
 
 __global__ void copyBY_kernel(
-    double* tmp, 
+    double* bOld, 
     const ConservationParameter* U
 )
 {
@@ -45,7 +45,7 @@ __global__ void copyBY_kernel(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i < device_nx && j < device_ny) {
-        tmp[j + i * device_ny] = U[j + i * device_ny].bY;
+        bOld[j + i * device_ny] = U[j + i * device_ny].bY;
     }
 }
 

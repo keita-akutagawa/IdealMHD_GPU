@@ -193,7 +193,7 @@ __global__ void shuffleForFluxG_kernel(
     }
 }
 
-void HLLD::shuffleFluxG()
+void HLLD::shuffleForFluxG()
 {
     dim3 threadsPerBlock(16, 16);
     dim3 blocksPerGrid((nx + threadsPerBlock.x - 1) / threadsPerBlock.x,
@@ -229,7 +229,7 @@ void HLLD::calculateFluxG(
         CalculateFluxFunctor()
     );
 
-    shuffleFluxG();
+    shuffleForFluxG();
 }
 
 
