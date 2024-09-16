@@ -16,9 +16,8 @@ struct MPIInfo
     int gridX;
     int localGridX;
     int localNx; 
+    int buffer;
     int localSize; 
-
-    int buffer = 1;
 
     MPI_Datatype mpi_conservation_parameter_type;
     MPI_Datatype mpi_flux_type;    
@@ -35,14 +34,9 @@ struct MPIInfo
 };
 
 
-void setupInfo(MPIInfo& mPIInfo);
-
+void setupInfo(MPIInfo& mPIInfo, int buffer);
 
 void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo);
 
 
-void sendrecv_flux(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo);
-
 #endif
-
-

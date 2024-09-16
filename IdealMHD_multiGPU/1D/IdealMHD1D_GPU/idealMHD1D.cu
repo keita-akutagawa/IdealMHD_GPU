@@ -82,13 +82,15 @@ struct oneStepSecondFunctor {
 void IdealMHD1D::oneStepRK2()
 {
     sendrecv_U(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
+    boundary.symmetricBoundary2nd(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     thrust::copy(U.begin(), U.end(), UBar.begin());
 
     calculateDt();
 
     fluxF = fluxSolver.getFluxF(U);
-    sendrecv_flux(fluxF, mPIInfo);
 
     auto tupleForFluxFirst = thrust::make_tuple(U.begin(), fluxF.begin(), fluxF.begin() - 1);
     auto tupleForFluxFirstIterator = thrust::make_zip_iterator(tupleForFluxFirst);
@@ -99,11 +101,12 @@ void IdealMHD1D::oneStepRK2()
         oneStepFirstFunctor()
     );
     sendrecv_U(UBar, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     boundary.symmetricBoundary2nd(UBar, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     fluxF = fluxSolver.getFluxF(UBar);
-    sendrecv_flux(fluxF, mPIInfo);
 
     auto tupleForFluxSecond = thrust::make_tuple(U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - 1);
     auto tupleForFluxSecondIterator = thrust::make_zip_iterator(tupleForFluxSecond);
@@ -114,8 +117,10 @@ void IdealMHD1D::oneStepRK2()
         oneStepSecondFunctor()
     );
     sendrecv_U(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     boundary.symmetricBoundary2nd(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 

@@ -14,6 +14,7 @@ std::string directoryname = "/cfca-work/akutagawakt/IdealMHD_multiGPU/results_sh
 std::string filenameWithoutStep = "shock_tube";
 std::ofstream logfile("/cfca-work/akutagawakt/IdealMHD_multiGPU/results_shock_tube/log_shock_tube.txt");
 
+const int buffer = 2;
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;

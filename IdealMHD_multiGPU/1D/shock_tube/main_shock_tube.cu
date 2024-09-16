@@ -74,6 +74,7 @@ void IdealMHD1D::initializeU()
 
 
     sendrecv_U(U, mPIInfo);
+    boundary.symmetricBoundary2nd(U, mPIInfo);
 }
 
 
@@ -82,7 +83,7 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
 
     MPIInfo mPIInfo;
-    setupInfo(mPIInfo);
+    setupInfo(mPIInfo, buffer);
 
     cudaSetDevice(mPIInfo.rank);
 
@@ -90,10 +91,13 @@ int main(int argc, char** argv)
 
 
     IdealMHD1D idealMHD1D(mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     idealMHD1D.initializeU();
 
     for (int step = 0; step < totalStep + 1; step++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        
         if (step % recordStep == 0) {
             if (mPIInfo.rank == 0) {
                 std::cout << std::to_string(step) << ","
@@ -111,8 +115,6 @@ int main(int argc, char** argv)
         if (mPIInfo.rank == 0) {
             totalTime += dt;
         }
-
-        MPI_Barrier(MPI_COMM_WORLD);
     }
     
     MPI_Finalize();
