@@ -81,6 +81,7 @@ struct oneStepSecondFunctor {
 
 void IdealMHD1D::oneStepRK2()
 {
+    MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U(U, mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
     boundary.symmetricBoundary2nd(U, mPIInfo);
@@ -100,6 +101,7 @@ void IdealMHD1D::oneStepRK2()
         UBar.begin() + 1, 
         oneStepFirstFunctor()
     );
+    MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U(UBar, mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -116,6 +118,7 @@ void IdealMHD1D::oneStepRK2()
         U.begin() + 1, 
         oneStepSecondFunctor()
     );
+    MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U(U, mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -195,7 +198,16 @@ void IdealMHD1D::calculateDt()
     thrust::device_vector<double>::iterator dtMin = thrust::min_element(dtVector.begin(), dtVector.end());
     
     dt = (*dtMin) * CFL;
+
+    double dtLocal = dt;
+    double dtCommon;
+    
+    MPI_Allreduce(&dtLocal, &dtCommon, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+
+    dt = dtCommon;
+
     cudaMemcpyToSymbol(device_dt, &dt, sizeof(double));
+    cudaDeviceSynchronize();
 }
 
 
