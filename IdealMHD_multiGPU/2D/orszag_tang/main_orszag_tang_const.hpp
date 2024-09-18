@@ -8,11 +8,11 @@
 #include "../IdealMHD2D_GPU/idealMHD2D.hpp"
 
 
-std::string directoryname = "/cfca-work/akutagawakt/IdealMHD_multiGPU/results_orszag_tang";
+std::string directoryname = "/cfca-work/akutagawakt/IdealMHD_multiGPU/results_orszag_tang_procs=4";
 std::string filenameWithoutStep = "orszag_tang";
-std::ofstream logfile("/cfca-work/akutagawakt/IdealMHD_multiGPU/results_orszag_tang/log_orszag_tang.txt");
+std::ofstream logfile("/cfca-work/akutagawakt/IdealMHD_multiGPU/results_orszag_tang_procs=4/log_orszag_tang.txt");
 
-const int buffer = 2;
+const int buffer = 3;
 
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;

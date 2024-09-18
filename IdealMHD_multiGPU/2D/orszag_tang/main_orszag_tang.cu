@@ -83,6 +83,15 @@ int main(int argc, char** argv)
 
     idealMHD2D.initializeU();
 
+    if (mPIInfo.rank == 0) {
+        size_t free_mem = 0;
+        size_t total_mem = 0;
+        cudaError_t status = cudaMemGetInfo(&free_mem, &total_mem);
+
+        std::cout << "Free memory: " << free_mem / (1024 * 1024) << " MB" << std::endl;
+        std::cout << "Total memory: " << total_mem / (1024 * 1024) << " MB" << std::endl;
+    }
+
     for (int step = 0; step < totalStep + 1; step++) {
         MPI_Barrier(MPI_COMM_WORLD);
         
