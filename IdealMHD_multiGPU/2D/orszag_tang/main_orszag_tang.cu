@@ -53,9 +53,11 @@ void IdealMHD2D::initializeU()
 
     cudaDeviceSynchronize();
 
+    MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U(U, mPIInfo);
     boundary.periodicBoundaryX2nd(U);
     boundary.periodicBoundaryY2nd(U);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 
