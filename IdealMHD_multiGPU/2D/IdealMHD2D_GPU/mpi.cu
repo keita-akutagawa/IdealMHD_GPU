@@ -49,8 +49,8 @@ void setupInfo(MPIInfo& mPIInfo, int buffer)
     mPIInfo.procs = procs;
     mPIInfo.gridX = d2[0];
     mPIInfo.gridY = d2[1];
-    mPIInfo.localGridX = rank % mPIInfo.gridX;
-    mPIInfo.localGridY = rank / mPIInfo.gridX;
+    mPIInfo.localGridX = rank / mPIInfo.gridX;
+    mPIInfo.localGridY = rank % mPIInfo.gridX;
     mPIInfo.localNx = nx / mPIInfo.gridX;
     mPIInfo.localNy = ny / mPIInfo.gridY;
     mPIInfo.buffer = buffer;
@@ -135,23 +135,23 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
 
     for (int i = 0; i < localSizeX; i++) {
         for (int j = 0; j < mPIInfo.buffer; j++) {
-            sendUDown[j + i * mPIInfo.buffer] = U[j + localNy + mPIInfo.buffer + i * localSizeY];
-            sendUUp[  j + i * mPIInfo.buffer] = U[j + mPIInfo.buffer           + i * localSizeY];
+            sendUDown[j + i * mPIInfo.buffer] = U[j + localNy        + i * localSizeY];
+            sendUUp[  j + i * mPIInfo.buffer] = U[j + mPIInfo.buffer + i * localSizeY];
         }
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Sendrecv(sendUDown.data(), sendUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
-                 recvUUp.data(),  recvUUp.size(),    mPIInfo.mpi_conservation_parameter_type, up,   0, 
+                 recvUUp.data(),   recvUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
                  MPI_COMM_WORLD, &st);
-    MPI_Sendrecv(sendUUp.data(),  sendUUp.size(),    mPIInfo.mpi_conservation_parameter_type, up,   0, 
+    MPI_Sendrecv(sendUUp.data(),   sendUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
                  recvUDown.data(), recvUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
                  MPI_COMM_WORLD, &st);
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < localSizeX; i++) {
         for (int j = 0; j < mPIInfo.buffer; j++) {
-            U[j + mPIInfo.buffer           + i * localSizeY] = recvUUp[  j + i * mPIInfo.buffer];
+            U[j                            + i * localSizeY] = recvUUp[  j + i * mPIInfo.buffer];
             U[j + localNy + mPIInfo.buffer + i * localSizeY] = recvUDown[j + i * mPIInfo.buffer];
         }
     }
