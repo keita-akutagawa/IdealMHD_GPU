@@ -35,6 +35,8 @@ public:
 
     void oneStepRK2();
 
+    void oneStepRK2_periodicXSymmetricY();
+
     void save(
         std::string directoryname, 
         std::string filenameWithoutStep, 

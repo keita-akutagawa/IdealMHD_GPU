@@ -8,6 +8,7 @@ class Boundary
 {
 private:
     MPIInfo mPIInfo; 
+    MPIInfo* device_mPIInfo; 
 
 public:
     Boundary(MPIInfo& mPIInfo);
@@ -22,15 +23,13 @@ public:
 
     /*
     void symmetricBoundaryX2nd(
-        thrust::device_vector<ConservationParameter>& U, 
-        MPIInfo& mPIInfo
-    );
-
-    void symmetricBoundaryY2nd(
-        thrust::device_vector<ConservationParameter>& U, 
-        MPIInfo& mPIInfo
+        thrust::device_vector<ConservationParameter>& U
     );
     */
+
+    void symmetricBoundaryY2nd(
+        thrust::device_vector<ConservationParameter>& U
+    );
 
 private:
 

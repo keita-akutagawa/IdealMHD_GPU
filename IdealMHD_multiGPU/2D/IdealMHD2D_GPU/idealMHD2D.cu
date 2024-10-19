@@ -227,6 +227,90 @@ void IdealMHD2D::oneStepRK2()
 }
 
 
+void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
+{
+    int localSizeX = mPIInfo.localSizeX;
+    int localSizeY = mPIInfo.localSizeY;
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    sendrecv_U(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
+    boundary.periodicBoundaryX2nd(U);
+    boundary.symmetricBoundaryY2nd(U);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((localSizeX + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (localSizeY + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+    copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bXOld.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        localSizeX, localSizeY
+    );
+    copyBY_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bYOld.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        localSizeX, localSizeY
+    );
+    thrust::copy(U.begin(), U.end(), UBar.begin());
+
+    calculateDt();
+
+    shiftUToCenterForCT(U);
+    fluxF = fluxSolver.getFluxF(U);
+    fluxG = fluxSolver.getFluxG(U);
+    backUToCenterHalfForCT(U);
+
+    auto tupleForFluxFirst = thrust::make_tuple(
+        U.begin(), fluxF.begin(), fluxF.begin() - localSizeY, fluxG.begin(), fluxG.begin() - 1
+    );
+    auto tupleForFluxFirstIterator = thrust::make_zip_iterator(tupleForFluxFirst);
+    thrust::transform(
+        tupleForFluxFirstIterator + localSizeY, 
+        tupleForFluxFirstIterator + localSizeX * localSizeY, 
+        UBar.begin() + localSizeY, 
+        oneStepFirstFunctor()
+    );
+
+    ct.setOldFlux2D(fluxF, fluxG);
+    ct.divBClean(bXOld, bYOld, UBar);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    sendrecv_U(UBar, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
+    boundary.periodicBoundaryX2nd(UBar);
+    boundary.symmetricBoundaryY2nd(UBar);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    shiftUToCenterForCT(UBar);
+    fluxF = fluxSolver.getFluxF(UBar);
+    fluxG = fluxSolver.getFluxG(UBar);
+    backUToCenterHalfForCT(UBar);
+
+    auto tupleForFluxSecond = thrust::make_tuple(
+        U.begin(), UBar.begin(), fluxF.begin(), fluxF.begin() - localSizeY, fluxG.begin(), fluxG.begin() - 1
+    );
+    auto tupleForFluxSecondIterator = thrust::make_zip_iterator(tupleForFluxSecond);
+    thrust::transform(
+        tupleForFluxSecondIterator + localSizeY, 
+        tupleForFluxSecondIterator + localSizeX * localSizeY, 
+        U.begin() + localSizeY, 
+        oneStepSecondFunctor()
+    );
+
+    ct.divBClean(bXOld, bYOld, U);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    sendrecv_U(U, mPIInfo);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    boundary.periodicBoundaryX2nd(U);
+    boundary.symmetricBoundaryY2nd(U);
+    MPI_Barrier(MPI_COMM_WORLD);
+}
+
+
 void IdealMHD2D::save(
     std::string directoryname, 
     std::string filenameWithoutStep, 
