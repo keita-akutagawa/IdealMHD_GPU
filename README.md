@@ -1,4 +1,4 @@
-Ideal MHD simulation code written in CUDA C++.
+Ideal MHD simulation code written in CUDA C++ (& Thrust) & MPI.
 
 ## Scheme
 
