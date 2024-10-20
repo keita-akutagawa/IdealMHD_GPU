@@ -1,11 +1,8 @@
-理想MHDシミュレーションのコードです。
-C++で書かれています。
+Ideal MHD simulation code written in CUDA C++.
 
-Thrustライブラリ(CUDA)を用いてGPU並列化を施しています。
-
-## スキーム
+## Scheme
 
 - HLLD
-- MUSCL(minmod) : 空間2次精度
+- MUSCL(minmod) : 2nd order
 - CT-Contact
-- RK2 : 時間2次精度
+- Runge-Kutta2 : 2nd order
