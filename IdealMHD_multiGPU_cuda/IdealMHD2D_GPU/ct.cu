@@ -27,15 +27,15 @@ __global__ void setOldFlux_kernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (i < localSizeX - 1 && j < localSizeY - 1) {
+    if (0 < i && i < localSizeX && 0 < j && j < localSizeY) {
         int index = j + i * localSizeY;
         double rho, u, v, bX, bY;
 
         rho = U[index].rho;
         u   = U[index].rhoU / rho;
         v   = U[index].rhoV / rho;
-        bX  = U[index].bX;
-        bY  = U[index].bY;
+        bX  = 0.5 * (U[index].bX + U[index - localSizeY].bX);
+        bY  = 0.5 * (U[index].bY + U[index - 1].bY);
 
         oldNumericalFluxF_f5[index] = fluxF[index].f5;
         oldNumericalFluxG_f4[index] = fluxG[index].f4;
