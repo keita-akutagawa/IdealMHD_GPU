@@ -98,14 +98,22 @@ __global__ void getEZVector_kernel(
             + oldNumericalFluxG_f4[index] + oldNumericalFluxG_f4[index + localSizeY]
         );
 
-        eZ_S = (1.0 + sign(oldNumericalFluxF_f0[index])) * (oldNumericalFluxG_f4[index] - oldFluxG_f4[index])
-             + (1.0 - sign(oldNumericalFluxF_f0[index])) * (oldNumericalFluxG_f4[index + localSizeY] - oldFluxG_f4[index + localSizeY]);
-        eZ_N = (1.0 + sign(oldNumericalFluxF_f0[index + 1])) * (oldNumericalFluxG_f4[index + 1] - oldFluxG_f4[index + 1])
-             + (1.0 - sign(oldNumericalFluxF_f0[index + 1])) * (oldNumericalFluxG_f4[index + 1 + localSizeY] - oldFluxG_f4[index + 1 + localSizeY]);
-        eZ_W = -(1.0 + sign(oldNumericalFluxG_f0[index])) * (oldNumericalFluxF_f5[index] - oldFluxF_f5[index])
-             - (1.0 - sign(oldNumericalFluxG_f0[index])) * (oldNumericalFluxF_f5[index + 1] - oldFluxF_f5[index + 1]);
-        eZ_E = -(1.0 + sign(oldNumericalFluxG_f0[index + localSizeY])) * (oldNumericalFluxF_f5[index + localSizeY] - oldFluxF_f5[index + localSizeY])
-             - (1.0 - sign(oldNumericalFluxG_f0[index + localSizeY])) * (oldNumericalFluxF_f5[index + 1 + localSizeY] - oldFluxF_f5[index + 1 + localSizeY]);
+        eZ_S = (1.0 + sign(oldNumericalFluxF_f0[index])) 
+             * (oldNumericalFluxG_f4[index] - oldFluxG_f4[index])
+             + (1.0 - sign(oldNumericalFluxF_f0[index])) 
+             * (oldNumericalFluxG_f4[index + localSizeY] - oldFluxG_f4[index + localSizeY]);
+        eZ_N = (1.0 + sign(oldNumericalFluxF_f0[index + 1])) 
+             * (oldFluxG_f4[index + 1] - oldNumericalFluxG_f4[index])
+             + (1.0 - sign(oldNumericalFluxF_f0[index + 1])) 
+             * (oldFluxG_f4[index + 1 + localSizeY] - oldNumericalFluxG_f4[index + localSizeY]);
+        eZ_W = -(1.0 + sign(oldNumericalFluxG_f0[index])) 
+             * (oldNumericalFluxF_f5[index] - oldFluxF_f5[index])
+             -(1.0 - sign(oldNumericalFluxG_f0[index])) 
+             * (oldNumericalFluxF_f5[index + 1] - oldFluxF_f5[index + 1]);
+        eZ_E = -(1.0 + sign(oldNumericalFluxG_f0[index + localSizeY])) 
+             * (oldFluxF_f5[index + localSizeY] - oldNumericalFluxF_f5[index])
+             -(1.0 - sign(oldNumericalFluxG_f0[index + localSizeY])) 
+             * (oldFluxF_f5[index + 1 + localSizeY] - oldNumericalFluxF_f5[index + 1]);
 
         eZ = eZ_arithmeticAverage + 1.0 / 8.0 * (eZ_S - eZ_N + eZ_W - eZ_E);
 
