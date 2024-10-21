@@ -161,8 +161,8 @@ void IdealMHD2D::oneStepRK2()
     MPI_Barrier(MPI_COMM_WORLD);
 
     sendrecv_U(U, mPIInfo);
-    boundary.periodicBoundaryX2nd(U);
-    boundary.periodicBoundaryY2nd(U);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.periodicBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
 
     
@@ -190,6 +190,9 @@ void IdealMHD2D::oneStepRK2()
 
     sendrecv_flux(fluxF, mPIInfo);
     sendrecv_flux(fluxG, mPIInfo);
+    boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
+    boundary.periodicBoundaryY2nd_flux(fluxF, fluxG);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     oneStepFirst_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
@@ -203,8 +206,8 @@ void IdealMHD2D::oneStepRK2()
     ct.setOldFlux2D(fluxF, fluxG, U);
 
     sendrecv_U(UBar, mPIInfo);
-    boundary.periodicBoundaryX2nd(UBar);
-    boundary.periodicBoundaryY2nd(UBar);
+    boundary.periodicBoundaryX2nd_U(UBar);
+    boundary.periodicBoundaryY2nd_U(UBar);
     MPI_Barrier(MPI_COMM_WORLD);
 
     shiftUToCenterForCT(UBar);
@@ -214,6 +217,9 @@ void IdealMHD2D::oneStepRK2()
 
     sendrecv_flux(fluxF, mPIInfo);
     sendrecv_flux(fluxG, mPIInfo);
+    boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
+    boundary.periodicBoundaryY2nd_flux(fluxF, fluxG);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     ct.setNowFlux2D(fluxF, fluxG, UBar);
 
@@ -229,15 +235,99 @@ void IdealMHD2D::oneStepRK2()
     ct.divBClean(bXOld, bYOld, U);
 
     sendrecv_U(U, mPIInfo);
-    boundary.periodicBoundaryX2nd(U);
-    boundary.periodicBoundaryY2nd(U);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.periodicBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
 
 void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
 {
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((mPIInfo.localSizeX + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (mPIInfo.localSizeY + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    sendrecv_U(U, mPIInfo);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.symmetricBoundaryY2nd_U(U);
+    MPI_Barrier(MPI_COMM_WORLD);
+
     
+    copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bXOld.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY
+    );
+    cudaDeviceSynchronize();
+    copyBY_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(bYOld.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY
+    );
+    cudaDeviceSynchronize();
+    thrust::copy(U.begin(), U.end(), UBar.begin());
+    cudaDeviceSynchronize();
+
+    calculateDt();
+
+    shiftUToCenterForCT(U);
+    fluxF = fluxSolver.getFluxF(U);
+    fluxG = fluxSolver.getFluxG(U);
+    backUToCenterHalfForCT(U);
+
+    sendrecv_flux(fluxF, mPIInfo);
+    sendrecv_flux(fluxG, mPIInfo);
+    boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
+    boundary.symmetricBoundaryY2nd_flux(fluxF, fluxG);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    oneStepFirst_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(U.data()), 
+        thrust::raw_pointer_cast(fluxF.data()), 
+        thrust::raw_pointer_cast(fluxG.data()), 
+        thrust::raw_pointer_cast(UBar.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY
+    );
+    cudaDeviceSynchronize();
+
+    ct.setOldFlux2D(fluxF, fluxG, U);
+
+    sendrecv_U(UBar, mPIInfo);
+    boundary.periodicBoundaryX2nd_U(UBar);
+    boundary.symmetricBoundaryY2nd_U(UBar);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    shiftUToCenterForCT(UBar);
+    fluxF = fluxSolver.getFluxF(UBar);
+    fluxG = fluxSolver.getFluxG(UBar);
+    backUToCenterHalfForCT(UBar);
+
+    sendrecv_flux(fluxF, mPIInfo);
+    sendrecv_flux(fluxG, mPIInfo);
+    boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
+    boundary.symmetricBoundaryY2nd_flux(fluxF, fluxG);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    ct.setNowFlux2D(fluxF, fluxG, UBar);
+
+    oneStepSecond_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(UBar.data()), 
+        thrust::raw_pointer_cast(fluxF.data()), 
+        thrust::raw_pointer_cast(fluxG.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY
+    );
+    cudaDeviceSynchronize();
+
+    ct.divBClean(bXOld, bYOld, U);
+
+    sendrecv_U(U, mPIInfo);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.symmetricBoundaryY2nd_U(U);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 

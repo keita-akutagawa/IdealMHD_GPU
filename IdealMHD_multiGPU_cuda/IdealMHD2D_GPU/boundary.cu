@@ -11,7 +11,7 @@ Boundary::Boundary(MPIInfo& mPIInfo)
 }
 
 
-void Boundary::periodicBoundaryX2nd(
+void Boundary::periodicBoundaryX2nd_U(
     thrust::device_vector<ConservationParameter>& U
 )
 {
@@ -19,8 +19,25 @@ void Boundary::periodicBoundaryX2nd(
 }
 
 
-void Boundary::periodicBoundaryY2nd(
+void Boundary::periodicBoundaryY2nd_U(
     thrust::device_vector<ConservationParameter>& U
+)
+{
+    
+}
+
+void Boundary::periodicBoundaryX2nd_flux(
+    thrust::device_vector<Flux>& fluxF, 
+    thrust::device_vector<Flux>& fluxG
+)
+{
+
+}
+
+
+void Boundary::periodicBoundaryY2nd_flux(
+    thrust::device_vector<Flux>& fluxF, 
+    thrust::device_vector<Flux>& fluxG
 )
 {
     
@@ -29,7 +46,7 @@ void Boundary::periodicBoundaryY2nd(
 ///////////////////////
 
 __global__
-void symmetricBoundaryY2nd_kernel(
+void symmetricBoundaryY2nd_U_kernel(
     ConservationParameter* U, 
     MPIInfo* device_mPIInfo
 )
@@ -41,64 +58,22 @@ void symmetricBoundaryY2nd_kernel(
         if (mPIInfo.isInside(i, 0)) {
             int index = mPIInfo.globalToLocal(i, 0);
         
-            U[index    ].rho  = U[index + 3].rho;
-            U[index    ].rhoU = U[index + 3].rhoU;
-            U[index    ].rhoV = U[index + 3].rhoV;
-            U[index    ].rhoW = U[index + 3].rhoW;
-            U[index    ].bX   = U[index + 3].bX;
-            U[index    ].bY   = U[index + 3].bY;
-            U[index    ].bZ   = U[index + 3].bZ;
-            U[index    ].e    = U[index + 3].e;
-            U[index + 1].rho  = U[index + 3].rho;
-            U[index + 1].rhoU = U[index + 3].rhoU;
-            U[index + 1].rhoV = U[index + 3].rhoV;
-            U[index + 1].rhoW = U[index + 3].rhoW;
-            U[index + 1].bX   = U[index + 3].bX;
-            U[index + 1].bY   = U[index + 3].bY;
-            U[index + 1].bZ   = U[index + 3].bZ;
-            U[index + 1].e    = U[index + 3].e;
-            U[index + 2].rho  = U[index + 3].rho;
-            U[index + 2].rhoU = U[index + 3].rhoU;
-            U[index + 2].rhoV = U[index + 3].rhoV;
-            U[index + 2].rhoW = U[index + 3].rhoW;
-            U[index + 2].bX   = U[index + 3].bX;
-            U[index + 2].bY   = U[index + 3].bY;
-            U[index + 2].bZ   = U[index + 3].bZ;
-            U[index + 2].e    = U[index + 3].e;
+            U[index    ] = U[index + 3];
+            U[index + 1] = U[index + 3];
+            U[index + 2] = U[index + 3];
         }
         
         if (mPIInfo.isInside(i, device_ny - 1)) {
             int index = mPIInfo.globalToLocal(i, device_ny - 1);
 
-            U[index    ].rho  = U[index - 5].rho;
-            U[index    ].rhoU = U[index - 5].rhoU;
-            U[index    ].rhoV = U[index - 5].rhoV;
-            U[index    ].rhoW = U[index - 5].rhoW;
-            U[index    ].bX   = U[index - 5].bX;
-            U[index    ].bY   = U[index - 5].bY;
-            U[index    ].bZ   = U[index - 5].bZ;
-            U[index    ].e    = U[index - 5].e;
-            U[index - 1].rho  = U[index - 4].rho;
-            U[index - 1].rhoU = U[index - 4].rhoU;
-            U[index - 1].rhoV = U[index - 4].rhoV;
-            U[index - 1].rhoW = U[index - 4].rhoW;
-            U[index - 1].bX   = U[index - 4].bX;
-            U[index - 1].bY   = U[index - 4].bY;
-            U[index - 1].bZ   = U[index - 4].bZ;
-            U[index - 1].e    = U[index - 4].e;
-            U[index - 2].rho  = U[index - 3].rho;
-            U[index - 2].rhoU = U[index - 3].rhoU;
-            U[index - 2].rhoV = U[index - 3].rhoV;
-            U[index - 2].rhoW = U[index - 3].rhoW;
-            U[index - 2].bX   = U[index - 3].bX;
-            U[index - 2].bY   = U[index - 3].bY;
-            U[index - 2].bZ   = U[index - 3].bZ;
-            U[index - 2].e    = U[index - 3].e;
+            U[index    ] = U[index - 3];
+            U[index - 1] = U[index - 3];
+            U[index - 2] = U[index - 3];
         }
     }
 }
 
-void Boundary::symmetricBoundaryY2nd(
+void Boundary::symmetricBoundaryY2nd_U(
     thrust::device_vector<ConservationParameter>& U
 )
 {
@@ -106,8 +81,54 @@ void Boundary::symmetricBoundaryY2nd(
     int threadsPerBlock = 256;
     int blocksPerGrid = (nx + threadsPerBlock - 1) / threadsPerBlock;
 
-    symmetricBoundaryY2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+    symmetricBoundaryY2nd_U_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
+        device_mPIInfo
+    );
+    cudaDeviceSynchronize();
+}
+
+
+__global__
+void symmetricBoundaryY2nd_flux_kernel(
+    Flux* fluxF, Flux* fluxG, 
+    MPIInfo* device_mPIInfo
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    MPIInfo mPIInfo = *device_mPIInfo;
+
+    if (i < device_nx) {
+        if (mPIInfo.isInside(i, 0)) {
+            int index = mPIInfo.globalToLocal(i, 0);
+        
+            flux[index    ] = flux[index + 3];
+            flux[index + 1] = flux[index + 3];
+            flux[index + 2] = flux[index + 3];
+        }
+        
+        if (mPIInfo.isInside(i, device_ny - 1)) {
+            int index = mPIInfo.globalToLocal(i, device_ny - 1);
+
+            flux[index    ] = flux[index - 3];
+            flux[index - 1] = flux[index - 3];
+            flux[index - 2] = flux[index - 3];
+        }
+    }
+}
+
+void Boundary::symmetricBoundaryY2nd_flux(
+    thrust::device_vector<Flux>& fluxF, 
+    thrust::device_vector<Flux>& fluxG
+)
+{
+    // そこまで重くないので、初期化と同じくグローバルで扱うことにする
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (nx + threadsPerBlock - 1) / threadsPerBlock;
+
+    symmetricBoundaryY2nd_flux_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(fluxF.data()), 
+        thrust::raw_pointer_cast(fluxG.data()),  
         device_mPIInfo
     );
     cudaDeviceSynchronize();
