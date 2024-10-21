@@ -1,7 +1,7 @@
 #include <thrust/device_vector.h>
 #include "const.hpp"
 #include "conservation_parameter_struct.hpp"
-#include "flux.hpp"
+#include "flux_struct.hpp"
 #include "mpi.hpp"
 
 
