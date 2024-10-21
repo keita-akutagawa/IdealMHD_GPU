@@ -188,6 +188,9 @@ void IdealMHD2D::oneStepRK2()
     fluxG = fluxSolver.getFluxG(U);
     backUToCenterHalfForCT(U);
 
+    sendrecv_flux(fluxF, mPIInfo);
+    sendrecv_flux(fluxG, mPIInfo);
+
     oneStepFirst_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
         thrust::raw_pointer_cast(fluxF.data()), 
@@ -208,6 +211,11 @@ void IdealMHD2D::oneStepRK2()
     fluxF = fluxSolver.getFluxF(UBar);
     fluxG = fluxSolver.getFluxG(UBar);
     backUToCenterHalfForCT(UBar);
+
+    sendrecv_flux(fluxF, mPIInfo);
+    sendrecv_flux(fluxG, mPIInfo);
+
+    ct.setNowFlux2D(fluxF, fluxG, UBar);
 
     oneStepSecond_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(UBar.data()), 
