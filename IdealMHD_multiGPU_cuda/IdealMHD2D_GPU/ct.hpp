@@ -18,13 +18,6 @@ private:
     thrust::device_vector<double> oldNumericalFluxF_f0;
     thrust::device_vector<double> oldNumericalFluxG_f0;
 
-    thrust::device_vector<double> nowNumericalFluxF_f5;
-    thrust::device_vector<double> nowNumericalFluxG_f4;
-    thrust::device_vector<double> nowFluxF_f5;
-    thrust::device_vector<double> nowFluxG_f4;
-    thrust::device_vector<double> nowNumericalFluxF_f0;
-    thrust::device_vector<double> nowNumericalFluxG_f0;
-
     thrust::device_vector<double> eZVector;
 
 public:
@@ -34,12 +27,6 @@ public:
         const thrust::device_vector<Flux>& fluxF, 
         const thrust::device_vector<Flux>& fluxG, 
         const thrust::device_vector<ConservationParameter>& U
-    );
-
-    void setNowFlux2D( 
-        const thrust::device_vector<Flux>& fluxF, 
-        const thrust::device_vector<Flux>& fluxG, 
-        const thrust::device_vector<ConservationParameter>& UBar
     );
     
     void divBClean( 

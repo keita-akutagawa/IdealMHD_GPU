@@ -221,8 +221,6 @@ void IdealMHD2D::oneStepRK2()
     boundary.periodicBoundaryY2nd_flux(fluxF, fluxG);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    ct.setNowFlux2D(fluxF, fluxG, UBar);
-
     oneStepSecond_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(UBar.data()), 
         thrust::raw_pointer_cast(fluxF.data()), 
@@ -310,8 +308,6 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
     boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
     boundary.symmetricBoundaryY2nd_flux(fluxF, fluxG);
     MPI_Barrier(MPI_COMM_WORLD);
-
-    ct.setNowFlux2D(fluxF, fluxG, UBar);
 
     oneStepSecond_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(UBar.data()), 
@@ -594,7 +590,6 @@ void IdealMHD2D::backUToCenterHalfForCT(
 
 
 
-// getter
 thrust::device_vector<ConservationParameter>& IdealMHD2D::getU()
 {
     return U;
