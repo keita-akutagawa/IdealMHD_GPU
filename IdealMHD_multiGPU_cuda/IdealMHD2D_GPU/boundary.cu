@@ -102,17 +102,23 @@ void symmetricBoundaryY2nd_flux_kernel(
         if (mPIInfo.isInside(i, 0)) {
             int index = mPIInfo.globalToLocal(i, 0);
         
-            flux[index    ] = flux[index + 3];
-            flux[index + 1] = flux[index + 3];
-            flux[index + 2] = flux[index + 3];
+            fluxF[index    ] = fluxF[index + 3];
+            fluxF[index + 1] = fluxF[index + 3];
+            fluxF[index + 2] = fluxF[index + 3];
+            fluxG[index    ] = fluxG[index + 3];
+            fluxG[index + 1] = fluxG[index + 3];
+            fluxG[index + 2] = fluxG[index + 3];
         }
         
         if (mPIInfo.isInside(i, device_ny - 1)) {
             int index = mPIInfo.globalToLocal(i, device_ny - 1);
 
-            flux[index    ] = flux[index - 3];
-            flux[index - 1] = flux[index - 3];
-            flux[index - 2] = flux[index - 3];
+            fluxF[index    ] = fluxF[index - 3];
+            fluxF[index - 1] = fluxF[index - 3];
+            fluxF[index - 2] = fluxF[index - 3];
+            fluxG[index    ] = fluxG[index - 3];
+            fluxG[index - 1] = fluxG[index - 3];
+            fluxG[index - 2] = fluxG[index - 3];
         }
     }
 }
