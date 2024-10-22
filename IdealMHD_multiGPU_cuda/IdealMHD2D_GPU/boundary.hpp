@@ -23,12 +23,12 @@ public:
     );
 
     /*
-    void symmetricBoundaryX2nd(
+    void wallBoundaryX2nd(
         thrust::device_vector<ConservationParameter>& U
     );
     */
 
-    void symmetricBoundaryY2nd(
+    void wallBoundaryY2nd(
         thrust::device_vector<ConservationParameter>& U
     );
 
