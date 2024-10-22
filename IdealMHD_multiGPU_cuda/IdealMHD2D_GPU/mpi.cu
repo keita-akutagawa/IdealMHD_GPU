@@ -77,27 +77,6 @@ void setupInfo(MPIInfo& mPIInfo, int buffer)
 
     MPI_Type_create_struct(8, block_lengths_conservation_parameter, offsets_conservation_parameter, types_conservation_parameter, &mPIInfo.mpi_conservation_parameter_type);
     MPI_Type_commit(&mPIInfo.mpi_conservation_parameter_type);
-
-
-    int block_lengths_flux[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint offsets_flux[8];
-    offsets_flux[0] = offsetof(Flux, f0);
-    offsets_flux[1] = offsetof(Flux, f1);
-    offsets_flux[2] = offsetof(Flux, f2);
-    offsets_flux[3] = offsetof(Flux, f3);
-    offsets_flux[4] = offsetof(Flux, f4);
-    offsets_flux[5] = offsetof(Flux, f5);
-    offsets_flux[6] = offsetof(Flux, f6);
-    offsets_flux[7] = offsetof(Flux, f7);
-
-    MPI_Datatype types_flux[8] = {
-        MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-        MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-        MPI_DOUBLE, MPI_DOUBLE
-    };
-
-    MPI_Type_create_struct(8, block_lengths_flux, offsets_flux, types_flux, &mPIInfo.mpi_flux_type);
-    MPI_Type_commit(&mPIInfo.mpi_flux_type);
 }
 
 
@@ -184,94 +163,6 @@ void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInf
     MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U_x(U, mPIInfo);
     sendrecv_U_y(U, mPIInfo);
-    MPI_Barrier(MPI_COMM_WORLD);
-}
-
-//////////
-
-void sendrecv_flux_x(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo)
-{
-    int localNx = mPIInfo.localNx;
-    int localNy = mPIInfo.localNy;
-    //int localSizeX = mPIInfo.localSizeX;
-    int localSizeY = mPIInfo.localSizeY;
-
-    int left = mPIInfo.getRank(-1, 0);
-    int right = mPIInfo.getRank(1, 0);
-    MPI_Status st;
-
-    thrust::host_vector<Flux> sendFluxLeft(mPIInfo.buffer * localNy), sendFluxRight(mPIInfo.buffer * localNy);
-    thrust::host_vector<Flux> recvFluxLeft(mPIInfo.buffer * localNy), recvFluxRight(mPIInfo.buffer * localNy);
-
-    for (int i = 0; i < mPIInfo.buffer; i++) {
-        for (int j = 0; j < localNy; j++) {
-            sendFluxRight[j + i * localNy] = flux[j + mPIInfo.buffer + (localNx + i)        * localSizeY];
-            sendFluxLeft[ j + i * localNy] = flux[j + mPIInfo.buffer + (mPIInfo.buffer + i) * localSizeY];
-        }
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Sendrecv(sendFluxRight.data(), sendFluxRight.size(), mPIInfo.mpi_flux_type, right, 0, 
-                 recvFluxLeft.data(),  recvFluxLeft.size(),  mPIInfo.mpi_flux_type, left,  0, 
-                 MPI_COMM_WORLD, &st);
-    MPI_Sendrecv(sendFluxLeft.data(),  sendFluxLeft.size(),  mPIInfo.mpi_flux_type, left,  0, 
-                 recvFluxRight.data(), recvFluxRight.size(), mPIInfo.mpi_flux_type, right, 0, 
-                 MPI_COMM_WORLD, &st);
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    for (int i = 0; i < mPIInfo.buffer; i++) {
-        for (int j = 0; j < localNy; j++) {
-            flux[j + mPIInfo.buffer + i                              * localSizeY] = recvFluxLeft[ j + i * localNy];
-            flux[j + mPIInfo.buffer + (localNx + mPIInfo.buffer + i) * localSizeY] = recvFluxRight[j + i * localNy];
-        }
-    }
-}
-
-
-void sendrecv_flux_y(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo)
-{
-    //int localNx = mPIInfo.localNx;
-    int localNy = mPIInfo.localNy;
-    int localSizeX = mPIInfo.localSizeX;
-    int localSizeY = mPIInfo.localSizeY;
-
-    int up = mPIInfo.getRank(0, -1);
-    int down = mPIInfo.getRank(0, 1);
-    MPI_Status st;
-
-    thrust::host_vector<Flux> sendFluxUp(mPIInfo.buffer * localSizeX), sendFluxDown(mPIInfo.buffer * localSizeX);
-    thrust::host_vector<Flux> recvFluxUp(mPIInfo.buffer * localSizeX), recvFluxDown(mPIInfo.buffer * localSizeX);
-
-    for (int i = 0; i < localSizeX; i++) {
-        for (int j = 0; j < mPIInfo.buffer; j++) {
-            sendFluxDown[j + i * mPIInfo.buffer] = flux[j + localNy        + i * localSizeY];
-            sendFluxUp[  j + i * mPIInfo.buffer] = flux[j + mPIInfo.buffer + i * localSizeY];
-        }
-    }
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Sendrecv(sendFluxDown.data(), sendFluxDown.size(), mPIInfo.mpi_flux_type, down, 0, 
-                 recvFluxUp.data(),   recvFluxUp.size(),   mPIInfo.mpi_flux_type, up,   0, 
-                 MPI_COMM_WORLD, &st);
-    MPI_Sendrecv(sendFluxUp.data(),   sendFluxUp.size(),   mPIInfo.mpi_flux_type, up,   0, 
-                 recvFluxDown.data(), recvFluxDown.size(), mPIInfo.mpi_flux_type, down, 0, 
-                 MPI_COMM_WORLD, &st);
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    for (int i = 0; i < localSizeX; i++) {
-        for (int j = 0; j < mPIInfo.buffer; j++) {
-            flux[j                            + i * localSizeY] = recvFluxUp[  j + i * mPIInfo.buffer];
-            flux[j + localNy + mPIInfo.buffer + i * localSizeY] = recvFluxDown[j + i * mPIInfo.buffer];
-        }
-    }
-}
-
-
-void sendrecv_flux(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo)
-{
-    MPI_Barrier(MPI_COMM_WORLD);
-    sendrecv_flux_x(flux, mPIInfo);
-    sendrecv_flux_y(flux, mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
 }
 
