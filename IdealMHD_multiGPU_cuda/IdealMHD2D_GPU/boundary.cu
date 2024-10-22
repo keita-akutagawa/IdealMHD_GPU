@@ -31,15 +31,16 @@ void Boundary::periodicBoundaryY2nd(
 __global__
 void wallBoundaryY2nd_kernel(
     ConservationParameter* U, 
+    int localSizeX, int localSizeY, 
     MPIInfo* device_mPIInfo
 )
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     MPIInfo mPIInfo = *device_mPIInfo;
 
-    if (i < device_nx) {
-        if (mPIInfo.isInside(i, 0)) {
-            int index = mPIInfo.globalToLocal(i, 0);
+    if (i < localSizeX) {
+        if (mPIInfo.localGridY == 0) {
+            int index = 0 + i * localSizeY;
 
             double rho, u, v, w, bX, bY, bZ, p, e;
             ConservationParameter wallU;
@@ -68,8 +69,8 @@ void wallBoundaryY2nd_kernel(
             U[index + 2] = wallU;
         }
         
-        if (mPIInfo.isInside(i, device_ny - 1)) {
-            int index = mPIInfo.globalToLocal(i, device_ny - 1);
+        if (mPIInfo.localGridY == mPIInfo.gridY - 1) {
+            int index = localSizeY - 1 + i * localSizeY;
 
             double rho, u, v, w, bX, bY, bZ, p, e;
             ConservationParameter wallU;
@@ -106,10 +107,11 @@ void Boundary::wallBoundaryY2nd(
 {
     // そこまで重くないので、初期化と同じくグローバルで扱うことにする
     int threadsPerBlock = 256;
-    int blocksPerGrid = (nx + threadsPerBlock - 1) / threadsPerBlock;
+    int blocksPerGrid = (mPIInfo.localSizeX + threadsPerBlock - 1) / threadsPerBlock;
 
     wallBoundaryY2nd_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY, 
         device_mPIInfo
     );
     cudaDeviceSynchronize();
