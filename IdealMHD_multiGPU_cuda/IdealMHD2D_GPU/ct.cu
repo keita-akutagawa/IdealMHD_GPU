@@ -115,7 +115,7 @@ __global__ void getEZVector_kernel(
              -(1.0 - sign(oldNumericalFluxG_f0[index + localSizeY])) 
              * (oldFluxF_f5[index + 1 + localSizeY] - oldNumericalFluxF_f5[index + 1]);
 
-        eZ = eZ_arithmeticAverage + 1.0 / 8.0 * (eZ_S - eZ_N + eZ_W - eZ_E);
+        eZ = eZ_arithmeticAverage + 0.125 * (eZ_S - eZ_N + eZ_W - eZ_E);
 
         eZVector[index] = eZ;
     }

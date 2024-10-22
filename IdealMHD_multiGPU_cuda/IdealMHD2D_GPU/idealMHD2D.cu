@@ -239,7 +239,7 @@ void IdealMHD2D::oneStepRK2()
 }
 
 
-void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
+void IdealMHD2D::oneStepRK2_periodicXWallY()
 {
     dim3 threadsPerBlock(16, 16);
     dim3 blocksPerGrid((mPIInfo.localSizeX + threadsPerBlock.x - 1) / threadsPerBlock.x,
@@ -250,9 +250,8 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
 
     sendrecv_U(U, mPIInfo);
     boundary.periodicBoundaryX2nd_U(U);
-    boundary.symmetricBoundaryY2nd_U(U);
+    boundary.wallBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
-
     
     copyBX_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(bXOld.data()), 
@@ -279,7 +278,7 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
     sendrecv_flux(fluxF, mPIInfo);
     sendrecv_flux(fluxG, mPIInfo);
     boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
-    boundary.symmetricBoundaryY2nd_flux(fluxF, fluxG);
+    boundary.wallBoundaryY2nd_flux(fluxF, fluxG);
     MPI_Barrier(MPI_COMM_WORLD);
 
     oneStepFirst_kernel<<<blocksPerGrid, threadsPerBlock>>>(
@@ -295,7 +294,7 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
 
     sendrecv_U(UBar, mPIInfo);
     boundary.periodicBoundaryX2nd_U(UBar);
-    boundary.symmetricBoundaryY2nd_U(UBar);
+    boundary.wallBoundaryY2nd_U(UBar);
     MPI_Barrier(MPI_COMM_WORLD);
 
     shiftUToCenterForCT(UBar);
@@ -306,7 +305,7 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
     sendrecv_flux(fluxF, mPIInfo);
     sendrecv_flux(fluxG, mPIInfo);
     boundary.periodicBoundaryX2nd_flux(fluxF, fluxG);
-    boundary.symmetricBoundaryY2nd_flux(fluxF, fluxG);
+    boundary.wallBoundaryY2nd_flux(fluxF, fluxG);
     MPI_Barrier(MPI_COMM_WORLD);
 
     oneStepSecond_kernel<<<blocksPerGrid, threadsPerBlock>>>(
@@ -322,7 +321,7 @@ void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
 
     sendrecv_U(U, mPIInfo);
     boundary.periodicBoundaryX2nd_U(U);
-    boundary.symmetricBoundaryY2nd_U(U);
+    boundary.wallBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
 }
 

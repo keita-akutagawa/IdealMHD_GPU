@@ -14,22 +14,52 @@ private:
 public:
     Boundary(MPIInfo& mPIInfo);
 
-    void periodicBoundaryX2nd(
+    void periodicBoundaryX2nd_U(
         thrust::device_vector<ConservationParameter>& U
     );
 
-    void periodicBoundaryY2nd(
+    void periodicBoundaryY2nd_U(
         thrust::device_vector<ConservationParameter>& U
+    );
+
+    void periodicBoundaryX2nd_flux(
+        thrust::device_vector<Flux>& fluxF, 
+        thrust::device_vector<Flux>& fluxG
+    );
+
+    void periodicBoundaryY2nd_flux(
+        thrust::device_vector<Flux>& fluxF, 
+        thrust::device_vector<Flux>& fluxG
     );
 
     /*
-    void wallBoundaryX2nd(
+    void wallBoundaryX2nd_U(
         thrust::device_vector<ConservationParameter>& U
     );
     */
 
-    void wallBoundaryY2nd(
+    void wallBoundaryY2nd_U(
         thrust::device_vector<ConservationParameter>& U
+    );
+
+    void wallBoundaryY2nd_flux(
+        thrust::device_vector<Flux>& fluxF, 
+        thrust::device_vector<Flux>& fluxG
+    );
+
+    /*
+    void symmetricBoundaryX2nd_U(
+        thrust::device_vector<ConservationParameter>& U
+    );
+    */
+
+    void symmetricBoundaryY2nd_U(
+        thrust::device_vector<ConservationParameter>& U
+    );
+
+    void symmetricBoundaryY2nd_flux(
+        thrust::device_vector<Flux>& fluxF, 
+        thrust::device_vector<Flux>& fluxG
     );
 
 private:
