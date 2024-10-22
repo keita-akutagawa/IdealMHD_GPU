@@ -45,14 +45,14 @@ void wallBoundaryY2nd_kernel(
             double rho, u, v, w, bX, bY, bZ, p, e;
             ConservationParameter wallU;
 
-            rho = U[index + 3].rho;
-            u   = U[index + 3].rhoU / rho; 
-            v   = U[index + 3].rhoV / rho; 
-            w   = U[index + 3].rhoW / rho;
-            bX  = U[index + 3].bX; 
-            bY  = U[index + 3].bY;
-            bZ  = U[index + 3].bZ;
-            e   = U[index + 3].e;
+            rho = U[index + mPIInfo.buffer].rho;
+            u   = U[index + mPIInfo.buffer].rhoU / rho; 
+            v   = U[index + mPIInfo.buffer].rhoV / rho; 
+            w   = U[index + mPIInfo.buffer].rhoW / rho;
+            bX  = U[index + mPIInfo.buffer].bX; 
+            bY  = U[index + mPIInfo.buffer].bY;
+            bZ  = U[index + mPIInfo.buffer].bZ;
+            e   = U[index + mPIInfo.buffer].e;
             p   = (device_gamma_mhd - 1.0)
                 * (e - 0.5 * rho * (u * u + v * v + w * w)
                 - 0.5 * (bX * bX + bY * bY + bZ * bZ));
@@ -63,10 +63,10 @@ void wallBoundaryY2nd_kernel(
             e = p / (device_gamma_mhd - 1.0) + 0.5 * rho * (u * u + (-v) * (-v) + w * w)
             + 0.5 * (bX * bX + 0.0 * 0.0 + bZ * bZ); 
             wallU.e = e;
-        
-            U[index    ] = wallU;
-            U[index + 1] = wallU;
-            U[index + 2] = wallU;
+
+            for (int buf = 0; buf < mPIInfo.buffer; buf++) {
+                U[index + buf] = wallU;
+            }
         }
         
         if (mPIInfo.localGridY == mPIInfo.gridY - 1) {
@@ -94,9 +94,9 @@ void wallBoundaryY2nd_kernel(
             + 0.5 * (bX * bX + 0.0 * 0.0 + bZ * bZ); 
             wallU.e = e;
 
-            U[index    ] = wallU;
-            U[index - 1] = wallU;
-            U[index - 2] = wallU;
+            for (int buf = 0; buf < mPIInfo.buffer; buf++) {
+                U[index - buf] = wallU;
+            }
         }
     }
 }
