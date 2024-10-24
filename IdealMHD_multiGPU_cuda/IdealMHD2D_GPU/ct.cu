@@ -11,6 +11,13 @@ CT::CT(MPIInfo& mPIInfo)
       oldNumericalFluxF_f0(mPIInfo.localSizeX * mPIInfo.localSizeY), 
       oldNumericalFluxG_f0(mPIInfo.localSizeX * mPIInfo.localSizeY), 
 
+      nowNumericalFluxF_f5(mPIInfo.localSizeX * mPIInfo.localSizeY), 
+      nowNumericalFluxG_f4(mPIInfo.localSizeX * mPIInfo.localSizeY), 
+      nowFluxF_f5         (mPIInfo.localSizeX * mPIInfo.localSizeY), 
+      nowFluxG_f4         (mPIInfo.localSizeX * mPIInfo.localSizeY), 
+      nowNumericalFluxF_f0(mPIInfo.localSizeX * mPIInfo.localSizeY), 
+      nowNumericalFluxG_f0(mPIInfo.localSizeX * mPIInfo.localSizeY), 
+
       eZVector            (mPIInfo.localSizeX * mPIInfo.localSizeY)
 {
 }
@@ -74,6 +81,32 @@ void CT::setOldFlux2D(
 }
 
 
+void CT::setNowFlux2D(
+    const thrust::device_vector<Flux>& fluxF, 
+    const thrust::device_vector<Flux>& fluxG, 
+    const thrust::device_vector<ConservationParameter>& U
+)
+{
+    dim3 threadsPerBlock(16, 16);
+    dim3 blocksPerGrid((mPIInfo.localSizeX + threadsPerBlock.x - 1) / threadsPerBlock.x,
+                       (mPIInfo.localSizeY + threadsPerBlock.y - 1) / threadsPerBlock.y);
+
+    setFlux_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+        thrust::raw_pointer_cast(fluxF.data()), 
+        thrust::raw_pointer_cast(fluxG.data()), 
+        thrust::raw_pointer_cast(U.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxF_f5.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxG_f4.data()), 
+        thrust::raw_pointer_cast(nowFluxF_f5.data()), 
+        thrust::raw_pointer_cast(nowFluxG_f4.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxF_f0.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxG_f0.data()), 
+        mPIInfo.localSizeX, mPIInfo.localSizeY
+    );
+    cudaDeviceSynchronize();
+}
+
+
 __global__ void getEZVector_kernel(
     const double* oldNumericalFluxF_f5, 
     const double* oldNumericalFluxG_f4, 
@@ -81,6 +114,12 @@ __global__ void getEZVector_kernel(
     const double* oldFluxG_f4, 
     const double* oldNumericalFluxF_f0, 
     const double* oldNumericalFluxG_f0, 
+    const double* nowNumericalFluxF_f5, 
+    const double* nowNumericalFluxG_f4, 
+    const double* nowFluxF_f5, 
+    const double* nowFluxG_f4, 
+    const double* nowNumericalFluxF_f0, 
+    const double* nowNumericalFluxG_f0, 
     double* eZVector, 
     int localSizeX, int localSizeY
 )
@@ -89,35 +128,61 @@ __global__ void getEZVector_kernel(
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (i < localSizeX - 1 && j < localSizeY - 1) {
-        double eZ_arithmeticAverage, eZ_S, eZ_N, eZ_W, eZ_E;
-        double eZ;
+        double eZOld_arithmeticAverage, eZOld_S, eZOld_N, eZOld_W, eZOld_E;
+        double eZOld;
+        double eZNow_arithmeticAverage, eZNow_S, eZNow_N, eZNow_W, eZNow_E;
+        double eZNow;
         int index = j + i * localSizeY;
 
-        eZ_arithmeticAverage = 0.25 * (
+        eZOld_arithmeticAverage = 0.25 * (
             - oldNumericalFluxF_f5[index] - oldNumericalFluxF_f5[index + 1]
             + oldNumericalFluxG_f4[index] + oldNumericalFluxG_f4[index + localSizeY]
         );
 
-        eZ_S = (1.0 + sign(oldNumericalFluxF_f0[index])) 
+        eZOld_S = (1.0 + sign(oldNumericalFluxF_f0[index])) 
              * (oldNumericalFluxG_f4[index] - oldFluxG_f4[index])
              + (1.0 - sign(oldNumericalFluxF_f0[index])) 
              * (oldNumericalFluxG_f4[index + localSizeY] - oldFluxG_f4[index + localSizeY]);
-        eZ_N = (1.0 + sign(oldNumericalFluxF_f0[index + 1])) 
+        eZOld_N = (1.0 + sign(oldNumericalFluxF_f0[index + 1])) 
              * (oldFluxG_f4[index + 1] - oldNumericalFluxG_f4[index])
              + (1.0 - sign(oldNumericalFluxF_f0[index + 1])) 
              * (oldFluxG_f4[index + 1 + localSizeY] - oldNumericalFluxG_f4[index + localSizeY]);
-        eZ_W = -(1.0 + sign(oldNumericalFluxG_f0[index])) 
+        eZOld_W = -(1.0 + sign(oldNumericalFluxG_f0[index])) 
              * (oldNumericalFluxF_f5[index] - oldFluxF_f5[index])
              -(1.0 - sign(oldNumericalFluxG_f0[index])) 
              * (oldNumericalFluxF_f5[index + 1] - oldFluxF_f5[index + 1]);
-        eZ_E = -(1.0 + sign(oldNumericalFluxG_f0[index + localSizeY])) 
+        eZOld_E = -(1.0 + sign(oldNumericalFluxG_f0[index + localSizeY])) 
              * (oldFluxF_f5[index + localSizeY] - oldNumericalFluxF_f5[index])
              -(1.0 - sign(oldNumericalFluxG_f0[index + localSizeY])) 
              * (oldFluxF_f5[index + 1 + localSizeY] - oldNumericalFluxF_f5[index + 1]);
 
-        eZ = eZ_arithmeticAverage + 0.125 * (eZ_S - eZ_N + eZ_W - eZ_E);
+        eZOld = eZOld_arithmeticAverage + 0.125 * (eZOld_S - eZOld_N + eZOld_W - eZOld_E);
 
-        eZVector[index] = eZ;
+        eZNow_arithmeticAverage = 0.25 * (
+            - nowNumericalFluxF_f5[index] - nowNumericalFluxF_f5[index + 1]
+            + nowNumericalFluxG_f4[index] + nowNumericalFluxG_f4[index + localSizeY]
+        );
+
+        eZNow_S = (1.0 + sign(nowNumericalFluxF_f0[index])) 
+             * (nowNumericalFluxG_f4[index] - nowFluxG_f4[index])
+             + (1.0 - sign(nowNumericalFluxF_f0[index])) 
+             * (nowNumericalFluxG_f4[index + localSizeY] - nowFluxG_f4[index + localSizeY]);
+        eZNow_N = (1.0 + sign(nowNumericalFluxF_f0[index + 1])) 
+             * (nowFluxG_f4[index + 1] - nowNumericalFluxG_f4[index])
+             + (1.0 - sign(nowNumericalFluxF_f0[index + 1])) 
+             * (nowFluxG_f4[index + 1 + localSizeY] - nowNumericalFluxG_f4[index + localSizeY]);
+        eZNow_W = -(1.0 + sign(nowNumericalFluxG_f0[index])) 
+             * (nowNumericalFluxF_f5[index] - nowFluxF_f5[index])
+             -(1.0 - sign(nowNumericalFluxG_f0[index])) 
+             * (nowNumericalFluxF_f5[index + 1] - nowFluxF_f5[index + 1]);
+        eZNow_E = -(1.0 + sign(nowNumericalFluxG_f0[index + localSizeY])) 
+             * (nowFluxF_f5[index + localSizeY] - nowNumericalFluxF_f5[index])
+             -(1.0 - sign(nowNumericalFluxG_f0[index + localSizeY])) 
+             * (nowFluxF_f5[index + 1 + localSizeY] - nowNumericalFluxF_f5[index + 1]);
+
+        eZNow = eZNow_arithmeticAverage + 0.125 * (eZNow_S - eZNow_N + eZNow_W - eZNow_E);
+
+        eZVector[index] = 0.5 * (eZOld + eZNow);
     }
 }
 
@@ -126,7 +191,7 @@ __global__ void CT_kernel(
     const double* bXOld, const double* bYOld, 
     const double* eZVector, 
     ConservationParameter* U, 
-    int localSizeX, int localSizeY
+    int localSizeX, int localSizeY, int buffer
 )
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -160,6 +225,12 @@ void CT::divBClean(
         thrust::raw_pointer_cast(oldFluxG_f4.data()), 
         thrust::raw_pointer_cast(oldNumericalFluxF_f0.data()), 
         thrust::raw_pointer_cast(oldNumericalFluxG_f0.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxF_f5.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxG_f4.data()), 
+        thrust::raw_pointer_cast(nowFluxF_f5.data()), 
+        thrust::raw_pointer_cast(nowFluxG_f4.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxF_f0.data()), 
+        thrust::raw_pointer_cast(nowNumericalFluxG_f0.data()), 
         thrust::raw_pointer_cast(eZVector.data()), 
         mPIInfo.localSizeX, mPIInfo.localSizeY
     );
@@ -170,7 +241,7 @@ void CT::divBClean(
         thrust::raw_pointer_cast(bYOld.data()),
         thrust::raw_pointer_cast(eZVector.data()),
         thrust::raw_pointer_cast(U.data()), 
-        mPIInfo.localSizeX, mPIInfo.localSizeY
+        mPIInfo.localSizeX, mPIInfo.localSizeY, mPIInfo.buffer
     );
     cudaDeviceSynchronize();
 
