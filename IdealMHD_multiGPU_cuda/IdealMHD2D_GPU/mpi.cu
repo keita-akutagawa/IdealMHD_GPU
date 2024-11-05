@@ -49,8 +49,8 @@ void setupInfo(MPIInfo& mPIInfo, int buffer)
     mPIInfo.procs = procs;
     mPIInfo.gridX = d2[0];
     mPIInfo.gridY = d2[1];
-    mPIInfo.localGridX = rank / mPIInfo.gridX;
-    mPIInfo.localGridY = rank % mPIInfo.gridX;
+    mPIInfo.localGridX = rank / mPIInfo.gridY;
+    mPIInfo.localGridY = rank % mPIInfo.gridY;
     mPIInfo.localNx = nx / mPIInfo.gridX;
     mPIInfo.localNy = ny / mPIInfo.gridY;
     mPIInfo.buffer = buffer;
