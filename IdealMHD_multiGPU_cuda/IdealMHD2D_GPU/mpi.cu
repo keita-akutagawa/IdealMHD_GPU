@@ -117,19 +117,17 @@ void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
 
     for (int i = 0; i < mPIInfo.buffer; i++) {
         for (int j = 0; j < localNy; j++) {
-            sendURight[j + i * localNy] = U[j + mPIInfo.buffer + (localNx + i)        * localSizeY];
             sendULeft[ j + i * localNy] = U[j + mPIInfo.buffer + (mPIInfo.buffer + i) * localSizeY];
+            sendURight[j + i * localNy] = U[j + mPIInfo.buffer + (localNx + i)        * localSizeY];
         }
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Sendrecv(sendURight.data(), sendURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
-                 recvULeft.data(),  recvULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
-                 MPI_COMM_WORLD, &st);
     MPI_Sendrecv(sendULeft.data(),  sendULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
                  recvURight.data(), recvURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
                  MPI_COMM_WORLD, &st);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Sendrecv(sendURight.data(), sendURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
+                 recvULeft.data(),  recvULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
+                 MPI_COMM_WORLD, &st);
 
     for (int i = 0; i < mPIInfo.buffer; i++) {
         for (int j = 0; j < localNy; j++) {
@@ -147,33 +145,31 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
     int localSizeX = mPIInfo.localSizeX;
     int localSizeY = mPIInfo.localSizeY;
 
-    int up = mPIInfo.getRank(0, -1);
-    int down = mPIInfo.getRank(0, 1);
+    int down = mPIInfo.getRank(0, -1);
+    int up   = mPIInfo.getRank(0, 1);
     MPI_Status st;
 
-    thrust::host_vector<ConservationParameter> sendUUp(mPIInfo.buffer * localSizeX), sendUDown(mPIInfo.buffer * localSizeX);
-    thrust::host_vector<ConservationParameter> recvUUp(mPIInfo.buffer * localSizeX), recvUDown(mPIInfo.buffer * localSizeX);
+    thrust::host_vector<ConservationParameter> sendUDown(mPIInfo.buffer * localSizeX), sendUUp(mPIInfo.buffer * localSizeX);
+    thrust::host_vector<ConservationParameter> recvUDown(mPIInfo.buffer * localSizeX), recvUUp(mPIInfo.buffer * localSizeX);
 
     for (int i = 0; i < localSizeX; i++) {
         for (int j = 0; j < mPIInfo.buffer; j++) {
-            sendUDown[j + i * mPIInfo.buffer] = U[j + localNy        + i * localSizeY];
-            sendUUp[  j + i * mPIInfo.buffer] = U[j + mPIInfo.buffer + i * localSizeY];
+            sendUDown[j + i * mPIInfo.buffer] = U[j + mPIInfo.buffer + i * localSizeY];
+            sendUUp[  j + i * mPIInfo.buffer] = U[j + localNy        + i * localSizeY];
         }
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Sendrecv(sendUDown.data(), sendUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
                  recvUUp.data(),   recvUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
                  MPI_COMM_WORLD, &st);
     MPI_Sendrecv(sendUUp.data(),   sendUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
                  recvUDown.data(), recvUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
                  MPI_COMM_WORLD, &st);
-    MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < localSizeX; i++) {
         for (int j = 0; j < mPIInfo.buffer; j++) {
-            U[j                            + i * localSizeY] = recvUUp[  j + i * mPIInfo.buffer];
-            U[j + localNy + mPIInfo.buffer + i * localSizeY] = recvUDown[j + i * mPIInfo.buffer];
+            U[j                            + i * localSizeY] = recvUDown[j + i * mPIInfo.buffer];
+            U[j + localNy + mPIInfo.buffer + i * localSizeY] = recvUUp[  j + i * mPIInfo.buffer];
         }
     }
 }
@@ -181,14 +177,13 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
 
 void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo)
 {
-    MPI_Barrier(MPI_COMM_WORLD);
     sendrecv_U_x(U, mPIInfo);
     sendrecv_U_y(U, mPIInfo);
-    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 //////////
 
+/*
 void sendrecv_flux_x(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo)
 {
     int localNx = mPIInfo.localNx;
@@ -274,4 +269,5 @@ void sendrecv_flux(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo)
     sendrecv_flux_y(flux, mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
 }
+*/
 

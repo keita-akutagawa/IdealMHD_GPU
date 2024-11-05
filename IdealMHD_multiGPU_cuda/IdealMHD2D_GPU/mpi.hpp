@@ -44,11 +44,12 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
 void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo);
 
 
+/*
 void sendrecv_flux_x(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo);
 
 void sendrecv_flux_y(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo);
 
 void sendrecv_flux(thrust::device_vector<Flux>& flux, MPIInfo& mPIInfo);
-
+*/
 
 #endif
