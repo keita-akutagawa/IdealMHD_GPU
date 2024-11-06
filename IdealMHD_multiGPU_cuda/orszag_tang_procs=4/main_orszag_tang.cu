@@ -50,8 +50,15 @@ void IdealMHD2D::initializeU()
         thrust::raw_pointer_cast(U.data()), 
         device_mPIInfo
     );
-
     cudaDeviceSynchronize();
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    sendrecv_U(U, MPIInfo);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.periodicBoundaryY2nd_U(U);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 
