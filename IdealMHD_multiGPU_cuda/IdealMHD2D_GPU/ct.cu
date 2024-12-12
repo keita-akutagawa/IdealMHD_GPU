@@ -35,20 +35,30 @@ __global__ void setFlux_kernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (0 < i && i < localSizeX && 0 < j && j < localSizeY) {
+    if (0 < i && i < localSizeX - 1 && 0 < j && j < localSizeY - 1) {
         int index = j + i * localSizeY;
         double rho, u, v, bX, bY;
+        double xPosition = i * device_dx, yPosition = j * device_dy;
+        double jZ;
+        double eta;
 
         rho = U[index].rho;
         u   = U[index].rhoU / rho;
         v   = U[index].rhoV / rho;
         bX  = 0.5 * (U[index].bX + U[index - localSizeY].bX);
         bY  = 0.5 * (U[index].bY + U[index - 1].bY);
-
+        jZ = 0.25 * (
+            (U[index + localSizeY].bY - U[index].bY) / device_dx - (U[index + 1].bX - U[index].bX) / device_dy //右上
+          + (U[index - 1 + localSizeY].bY - U[index - 1].bY) / device_dx - (U[index].bX - U[index - 1].bX) / device_dy //右下
+          + (U[index - 1].bY - U[index - 1 - localSizeY].bY) / device_dx - (U[index - localSizeY].bX - U[index - localSizeY - 1].bX) / device_dy //左下
+          + (U[index].bY - U[index - localSizeY].bY) / device_dx - (U[index + 1 - localSizeY].bX - U[index - localSizeY].bX) / device_dy //左上
+        );
+        eta = getEta(xPosition, yPosition);
+  
         NumericalFluxF_f5[index] = fluxF[index].f5;
         NumericalFluxG_f4[index] = fluxG[index].f4;
-        FluxF_f5[index] = u * bY - v * bX;
-        FluxG_f4[index] = -(u * bY - v * bX);
+        FluxF_f5[index] = u * bY - v * bX - eta * jZ;
+        FluxG_f4[index] = -(u * bY - v * bX - eta * jZ);
         NumericalFluxF_f0[index] = fluxF[index].f0;
         NumericalFluxG_f0[index] = fluxG[index].f0;
     }
@@ -191,7 +201,7 @@ __global__ void CT_kernel(
     const double* bXOld, const double* bYOld, 
     const double* eZVector, 
     ConservationParameter* U, 
-    int localSizeX, int localSizeY, int buffer
+    int localSizeX, int localSizeY
 )
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -241,9 +251,8 @@ void CT::divBClean(
         thrust::raw_pointer_cast(bYOld.data()),
         thrust::raw_pointer_cast(eZVector.data()),
         thrust::raw_pointer_cast(U.data()), 
-        mPIInfo.localSizeX, mPIInfo.localSizeY, mPIInfo.buffer
+        mPIInfo.localSizeX, mPIInfo.localSizeY
     );
     cudaDeviceSynchronize();
-
 }
 
