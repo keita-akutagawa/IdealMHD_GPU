@@ -1,7 +1,7 @@
 #include "ct.hpp"
 
 
-CT::CT(MPIInfo& mPIInfo)
+CT::CT(IdealMHD2DMPI::MPIInfo& mPIInfo)
     : mPIInfo(mPIInfo), 
 
       oldNumericalFluxF_f5(mPIInfo.localSizeX * mPIInfo.localSizeY), 
@@ -39,21 +39,12 @@ __global__ void setFlux_kernel(
         int index = j + i * localSizeY;
         double rho, u, v, bX, bY;
         double xPosition = i * device_dx, yPosition = j * device_dy;
-        double jZ;
-        double eta;
 
         rho = U[index].rho;
         u   = U[index].rhoU / rho;
         v   = U[index].rhoV / rho;
         bX  = 0.5 * (U[index].bX + U[index - localSizeY].bX);
         bY  = 0.5 * (U[index].bY + U[index - 1].bY);
-        jZ = 0.25 * (
-            (U[index + localSizeY].bY - U[index].bY) / device_dx - (U[index + 1].bX - U[index].bX) / device_dy //右上
-          + (U[index - 1 + localSizeY].bY - U[index - 1].bY) / device_dx - (U[index].bX - U[index - 1].bX) / device_dy //右下
-          + (U[index - 1].bY - U[index - 1 - localSizeY].bY) / device_dx - (U[index - localSizeY].bX - U[index - localSizeY - 1].bX) / device_dy //左下
-          + (U[index].bY - U[index - localSizeY].bY) / device_dx - (U[index + 1 - localSizeY].bX - U[index - localSizeY].bX) / device_dy //左上
-        );
-        eta = getEta(xPosition, yPosition);
   
         NumericalFluxF_f5[index] = fluxF[index].f5;
         NumericalFluxG_f4[index] = fluxG[index].f4;
