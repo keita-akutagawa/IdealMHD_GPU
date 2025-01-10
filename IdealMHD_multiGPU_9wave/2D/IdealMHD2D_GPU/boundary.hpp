@@ -11,6 +11,17 @@ private:
     MPIInfo mPIInfo; 
     MPIInfo* device_mPIInfo; 
 
+    thrust::device_vector<ConservationParameter> sendULeft; 
+    thrust::device_vector<ConservationParameter> sendURight; 
+    thrust::device_vector<ConservationParameter> recvULeft; 
+    thrust::device_vector<ConservationParameter> recvURight; 
+
+    thrust::device_vector<ConservationParameter> sendUDown; 
+    thrust::device_vector<ConservationParameter> sendUUp; 
+    thrust::device_vector<ConservationParameter> recvUDown; 
+    thrust::device_vector<ConservationParameter> recvUUp; 
+
+
 public:
     Boundary(MPIInfo& mPIInfo);
 
@@ -20,16 +31,6 @@ public:
 
     void periodicBoundaryY2nd_U(
         thrust::device_vector<ConservationParameter>& U
-    );
-
-    void periodicBoundaryX2nd_flux(
-        thrust::device_vector<Flux>& fluxF, 
-        thrust::device_vector<Flux>& fluxG
-    );
-
-    void periodicBoundaryY2nd_flux(
-        thrust::device_vector<Flux>& fluxF, 
-        thrust::device_vector<Flux>& fluxG
     );
 
     /*
@@ -42,11 +43,6 @@ public:
         thrust::device_vector<ConservationParameter>& U
     );
 
-    void wallBoundaryY2nd_flux(
-        thrust::device_vector<Flux>& fluxF, 
-        thrust::device_vector<Flux>& fluxG
-    );
-
     /*
     void symmetricBoundaryX2nd_U(
         thrust::device_vector<ConservationParameter>& U
@@ -55,11 +51,6 @@ public:
 
     void symmetricBoundaryY2nd_U(
         thrust::device_vector<ConservationParameter>& U
-    );
-
-    void symmetricBoundaryY2nd_flux(
-        thrust::device_vector<Flux>& fluxF, 
-        thrust::device_vector<Flux>& fluxG
     );
 
 private:

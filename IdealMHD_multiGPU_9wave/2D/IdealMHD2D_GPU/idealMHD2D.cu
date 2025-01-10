@@ -153,7 +153,6 @@ void IdealMHD2D::oneStepRK2()
     );
     cudaDeviceSynchronize();
 
-    sendrecv_U(UBar, mPIInfo);
     boundary.periodicBoundaryX2nd_U(UBar);
     boundary.periodicBoundaryY2nd_U(UBar);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -170,22 +169,9 @@ void IdealMHD2D::oneStepRK2()
     );
     cudaDeviceSynchronize();
 
-    sendrecv_U(U, mPIInfo);
     boundary.periodicBoundaryX2nd_U(U);
     boundary.periodicBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
-}
-
-
-void IdealMHD2D::oneStepRK2_periodicXWallY()
-{
-    
-}
-
-
-void IdealMHD2D::oneStepRK2_periodicXSymmetricY()
-{
-    
 }
 
 

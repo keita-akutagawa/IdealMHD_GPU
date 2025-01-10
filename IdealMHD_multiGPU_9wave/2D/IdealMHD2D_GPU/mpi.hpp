@@ -36,9 +36,23 @@ struct MPIInfo
 void setupInfo(MPIInfo& mPIInfo, int buffer);
 
 
-void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo);
+void sendrecv_U_x(
+    thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<ConservationParameter>& sendULeft, 
+    thrust::device_vector<ConservationParameter>& sendURight, 
+    thrust::device_vector<ConservationParameter>& recvULeft, 
+    thrust::device_vector<ConservationParameter>& recvURight, 
+    MPIInfo& mPIInfo
+);
 
-void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo);
+void sendrecv_U_y(
+    thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<ConservationParameter>& sendUDown, 
+    thrust::device_vector<ConservationParameter>& sendUUp, 
+    thrust::device_vector<ConservationParameter>& recvUDown, 
+    thrust::device_vector<ConservationParameter>& recvUUp, 
+    MPIInfo& mPIInfo
+);
 
 void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo);
 

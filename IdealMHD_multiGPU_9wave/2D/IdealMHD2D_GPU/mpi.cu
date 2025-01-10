@@ -82,7 +82,13 @@ void setupInfo(MPIInfo& mPIInfo, int buffer)
 }
 
 
-void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo)
+void sendrecv_U_x(
+    thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<ConservationParameter>& sendULeft, 
+    thrust::device_vector<ConservationParameter>& sendURight, 
+    thrust::device_vector<ConservationParameter>& recvULeft, 
+    thrust::device_vector<ConservationParameter>& recvURight, 
+    MPIInfo& mPIInfo)
 {
     int localNx = mPIInfo.localNx;
     int localNy = mPIInfo.localNy;
@@ -93,9 +99,6 @@ void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
     int right = mPIInfo.getRank(1, 0);
     MPI_Status st;
 
-    thrust::host_vector<ConservationParameter> sendULeft(mPIInfo.buffer * localNy), sendURight(mPIInfo.buffer * localNy);
-    thrust::host_vector<ConservationParameter> recvULeft(mPIInfo.buffer * localNy), recvURight(mPIInfo.buffer * localNy);
-
     for (int i = 0; i < mPIInfo.buffer; i++) {
         for (int j = 0; j < localNy; j++) {
             sendULeft[ j + i * localNy] = U[j + mPIInfo.buffer + (mPIInfo.buffer + i) * localSizeY];
@@ -103,11 +106,11 @@ void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
         }
     }
 
-    MPI_Sendrecv(sendULeft.data(),  sendULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
-                 recvURight.data(), recvURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
+    MPI_Sendrecv(thrust::raw_pointer_cast(sendULeft.data()),  sendULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
+                 thrust::raw_pointer_cast(recvURight.data()), recvURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
                  MPI_COMM_WORLD, &st);
-    MPI_Sendrecv(sendURight.data(), sendURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
-                 recvULeft.data(),  recvULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
+    MPI_Sendrecv(thrust::raw_pointer_cast(sendURight.data()), sendURight.size(), mPIInfo.mpi_conservation_parameter_type, right, 0, 
+                 thrust::raw_pointer_cast(recvULeft.data()),  recvULeft.size(),  mPIInfo.mpi_conservation_parameter_type, left,  0, 
                  MPI_COMM_WORLD, &st);
 
     for (int i = 0; i < mPIInfo.buffer; i++) {
@@ -119,7 +122,13 @@ void sendrecv_U_x(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
 }
 
 
-void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo)
+void sendrecv_U_y(
+    thrust::device_vector<ConservationParameter>& U, 
+    thrust::device_vector<ConservationParameter>& sendUDown, 
+    thrust::device_vector<ConservationParameter>& sendUUp, 
+    thrust::device_vector<ConservationParameter>& recvUDown, 
+    thrust::device_vector<ConservationParameter>& recvUUp, 
+    MPIInfo& mPIInfo)
 {
     //int localNx = mPIInfo.localNx;
     int localNy = mPIInfo.localNy;
@@ -130,9 +139,6 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
     int up   = mPIInfo.getRank(0, 1);
     MPI_Status st;
 
-    thrust::host_vector<ConservationParameter> sendUDown(mPIInfo.buffer * localSizeX), sendUUp(mPIInfo.buffer * localSizeX);
-    thrust::host_vector<ConservationParameter> recvUDown(mPIInfo.buffer * localSizeX), recvUUp(mPIInfo.buffer * localSizeX);
-
     for (int i = 0; i < localSizeX; i++) {
         for (int j = 0; j < mPIInfo.buffer; j++) {
             sendUDown[j + i * mPIInfo.buffer] = U[j + mPIInfo.buffer + i * localSizeY];
@@ -140,11 +146,11 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
         }
     }
 
-    MPI_Sendrecv(sendUDown.data(), sendUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
-                 recvUUp.data(),   recvUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
+    MPI_Sendrecv(thrust::raw_pointer_cast(sendUDown.data()), sendUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
+                 thrust::raw_pointer_cast(recvUUp.data()),   recvUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
                  MPI_COMM_WORLD, &st);
-    MPI_Sendrecv(sendUUp.data(),   sendUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
-                 recvUDown.data(), recvUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
+    MPI_Sendrecv(thrust::raw_pointer_cast(sendUUp.data()),   sendUUp.size(),   mPIInfo.mpi_conservation_parameter_type, up,   0, 
+                 thrust::raw_pointer_cast(recvUDown.data()), recvUDown.size(), mPIInfo.mpi_conservation_parameter_type, down, 0, 
                  MPI_COMM_WORLD, &st);
 
     for (int i = 0; i < localSizeX; i++) {
@@ -155,11 +161,5 @@ void sendrecv_U_y(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPII
     }
 }
 
-
-void sendrecv_U(thrust::device_vector<ConservationParameter>& U, MPIInfo& mPIInfo)
-{
-    sendrecv_U_x(U, mPIInfo);
-    sendrecv_U_y(U, mPIInfo);
-}
 
 

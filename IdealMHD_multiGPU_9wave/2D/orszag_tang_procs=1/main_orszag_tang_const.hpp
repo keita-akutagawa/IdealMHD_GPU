@@ -17,11 +17,11 @@ const int buffer = 3;
 const double EPS = 1e-20;
 const double PI = 3.141592653589793;
 
-const int nx = 256;
+const int nx = 1024;
 const double xmin = 0.0;
 const double xmax = 2.0 * PI;
 const double dx = (xmax - xmin) / nx;
-const int ny = 256;
+const int ny = 1024;
 const double ymin = 0.0;
 const double ymax = 2.0 * PI;
 const double dy = (ymax - ymin) / ny;
@@ -34,7 +34,7 @@ double ch = 0.0;
 double cp = 0.0; 
 double cr = 0.18; 
 
-const int totalStep = 10000;
+const int totalStep = 30000;
 const int recordStep = 100;
 double totalTime = 0.0;
 

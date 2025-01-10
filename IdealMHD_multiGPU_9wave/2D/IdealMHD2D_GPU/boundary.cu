@@ -2,7 +2,17 @@
 
 
 Boundary::Boundary(MPIInfo& mPIInfo)
-    : mPIInfo(mPIInfo)
+    : mPIInfo(mPIInfo), 
+
+      sendULeft(mPIInfo.localNy * mPIInfo.buffer), 
+      sendURight(mPIInfo.localNy * mPIInfo.buffer), 
+      recvULeft(mPIInfo.localNy * mPIInfo.buffer), 
+      recvURight(mPIInfo.localNy * mPIInfo.buffer), 
+
+      sendUDown(mPIInfo.localSizeX * mPIInfo.buffer), 
+      sendUUp(mPIInfo.localSizeX * mPIInfo.buffer), 
+      recvUDown(mPIInfo.localSizeX * mPIInfo.buffer), 
+      recvUUp(mPIInfo.localSizeX * mPIInfo.buffer)
 {
 
     cudaMalloc(&device_mPIInfo, sizeof(MPIInfo));
@@ -15,7 +25,12 @@ void Boundary::periodicBoundaryX2nd_U(
     thrust::device_vector<ConservationParameter>& U
 )
 {
-
+    sendrecv_U_x(
+        U, 
+        sendULeft, sendURight, 
+        recvULeft, recvURight, 
+        mPIInfo
+    ); 
 }
 
 
@@ -23,24 +38,12 @@ void Boundary::periodicBoundaryY2nd_U(
     thrust::device_vector<ConservationParameter>& U
 )
 {
-    
-}
-
-void Boundary::periodicBoundaryX2nd_flux(
-    thrust::device_vector<Flux>& fluxF, 
-    thrust::device_vector<Flux>& fluxG
-)
-{
-
-}
-
-
-void Boundary::periodicBoundaryY2nd_flux(
-    thrust::device_vector<Flux>& fluxF, 
-    thrust::device_vector<Flux>& fluxG
-)
-{
-    
+    sendrecv_U_y(
+        U, 
+        sendUDown, sendUUp, 
+        recvUDown, recvUUp, 
+        mPIInfo
+    ); 
 }
 
 ///////////////////////
@@ -135,63 +138,6 @@ void Boundary::wallBoundaryY2nd_U(
 }
 
 
-// とりあえずCTに使う部分だけ。
-__global__
-void wallBoundaryY2nd_flux_kernel(
-    Flux* fluxF, Flux* fluxG, 
-    int localSizeX, int localSizeY, 
-    MPIInfo* device_mPIInfo
-)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    MPIInfo mPIInfo = *device_mPIInfo;
-
-    if (i < localSizeX) {
-        if (mPIInfo.localGridY == 0) {
-            int index = 0 + i * localSizeY;
-
-            for (int buf = 0; buf < mPIInfo.buffer; buf++) {  
-                fluxF[index + buf] = fluxF[index + mPIInfo.buffer];
-                fluxG[index + buf] = fluxG[index + mPIInfo.buffer];
-
-                fluxF[index + buf].f0 = 0.0;
-                fluxG[index + buf].f0 = 0.0;
-            }
-        }
-        
-        if (mPIInfo.localGridY == mPIInfo.gridY - 1) {
-            int index = localSizeY - 1 + i * localSizeY;
-
-            for (int buf = 0; buf < mPIInfo.buffer; buf++) {            
-                fluxF[index - buf] = fluxF[index - mPIInfo.buffer];
-                fluxG[index - buf] = fluxG[index - mPIInfo.buffer];
-
-                fluxF[index - buf].f0 = 0.0;
-                fluxG[index - buf].f0 = 0.0;
-            }
-        }
-    }
-}
-
-void Boundary::wallBoundaryY2nd_flux(
-    thrust::device_vector<Flux>& fluxF, 
-    thrust::device_vector<Flux>& fluxG
-)
-{
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (mPIInfo.localSizeX + threadsPerBlock - 1) / threadsPerBlock;
-
-    wallBoundaryY2nd_flux_kernel<<<blocksPerGrid, threadsPerBlock>>>(
-        thrust::raw_pointer_cast(fluxF.data()), 
-        thrust::raw_pointer_cast(fluxG.data()), 
-        mPIInfo.localSizeX, mPIInfo.localSizeY, 
-        device_mPIInfo
-    );
-    cudaDeviceSynchronize();
-}
-
-//////////
-
 __global__
 void symmetricBoundaryY2nd_U_kernel(
     ConservationParameter* U, 
@@ -230,55 +176,6 @@ void Boundary::symmetricBoundaryY2nd_U(
 
     symmetricBoundaryY2nd_U_kernel<<<blocksPerGrid, threadsPerBlock>>>(
         thrust::raw_pointer_cast(U.data()), 
-        mPIInfo.localSizeX, mPIInfo.localSizeY, 
-        device_mPIInfo
-    );
-    cudaDeviceSynchronize();
-}
-
-
-__global__
-void symmetricBoundaryY2nd_flux_kernel(
-    Flux* fluxF, Flux* fluxG, 
-    int localSizeX, int localSizeY, 
-    MPIInfo* device_mPIInfo
-)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    MPIInfo mPIInfo = *device_mPIInfo;
-
-    if (i < localSizeX) {
-        if (mPIInfo.localGridY == 0) {
-            int index = 0 + i * localSizeY;
-
-            for (int buf = 0; buf < mPIInfo.buffer; buf++) {
-                fluxF[index + buf] = fluxF[index + mPIInfo.buffer]; 
-                fluxG[index + buf] = fluxG[index + mPIInfo.buffer]; 
-            }
-        }
-        
-        if (mPIInfo.localGridY == mPIInfo.gridY - 1) {
-            int index = localSizeY - 1 + i * localSizeY;
-
-            for (int buf = 0; buf < mPIInfo.buffer; buf++) {
-                fluxF[index - buf] = fluxF[index - mPIInfo.buffer]; 
-                fluxG[index - buf] = fluxG[index - mPIInfo.buffer]; 
-            }
-        }
-    }
-}
-
-void Boundary::symmetricBoundaryY2nd_flux(
-    thrust::device_vector<Flux>& fluxF, 
-    thrust::device_vector<Flux>& fluxG
-)
-{
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (mPIInfo.localSizeX + threadsPerBlock - 1) / threadsPerBlock;
-
-    symmetricBoundaryY2nd_flux_kernel<<<blocksPerGrid, threadsPerBlock>>>(
-        thrust::raw_pointer_cast(fluxF.data()), 
-        thrust::raw_pointer_cast(fluxG.data()), 
         mPIInfo.localSizeX, mPIInfo.localSizeY, 
         device_mPIInfo
     );
