@@ -79,11 +79,7 @@ int main(int argc, char** argv)
     initializeDeviceConstants();
 
 
-    IdealMHD2D idealMHD2D(
-        mPIInfo, 
-        "../orszag_tang/poisson_periodic.mtx", 
-        "AMG_CLASSICAL_CG.json"
-    );
+    IdealMHD2D idealMHD2D(mPIInfo);
     MPI_Barrier(MPI_COMM_WORLD);
 
     idealMHD2D.initializeU();
@@ -117,7 +113,7 @@ int main(int argc, char** argv)
 
         if (idealMHD2D.checkCalculationIsCrashed()) {
             std::cout << "Calculation stopped! : " << step << " steps" << std::endl;
-            //idealMHD2D.save(directoryname, filenameWithoutStep, step);
+            idealMHD2D.save(directoryname, filenameWithoutStep, step);
             return 0;
         }
         

@@ -29,11 +29,7 @@ private:
     Projection projection; 
 
 public:
-    IdealMHD2D(
-        MPIInfo& mPIInfo, 
-        std::string MTXFilename, 
-        std::string jsonFilenameForSolver
-    );
+    IdealMHD2D(MPIInfo& mPIInfo);
 
     virtual void initializeU(); 
 

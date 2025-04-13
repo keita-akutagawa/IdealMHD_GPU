@@ -21,7 +21,10 @@ std::ofstream logfile(directoryname + "/log_orszag_tang.txt");
 
 const int buffer = 3;
 
-const double EPS = 1e-20;
+const std::string MTXfilename = "/home/akutagawakt/IdealMHD_multiGPU_projection/2D/orszag_tang/poisson_periodic.mtx";
+const std::string jsonFilenameForSolver = "/home/akutagawakt/IdealMHD_multiGPU_projection/2D/IdealMHD2D_GPU/AMG_CLASSICAL_CG.json";
+
+const double EPS = 1.0e-20;
 const double PI = 3.141592653589793;
 
 const int nx = 256;
@@ -37,7 +40,7 @@ const double CFL = 0.7;
 const double gamma_mhd = 5.0 / 3.0;
 double dt = 0.0;
 
-const int totalStep = 30000;
+const int totalStep = 10000;
 const int recordStep = 100;
 double totalTime = 0.0;
 

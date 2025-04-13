@@ -1,6 +1,12 @@
 #ifndef CONST_STRUCT_H
 #define CONST_STRUCT_H
 
+#include <string>
+
+
+extern const std::string MTXfilename;
+extern const std::string jsonFilenameForSolver;
+
 extern const double EPS;
 extern const double PI;
 

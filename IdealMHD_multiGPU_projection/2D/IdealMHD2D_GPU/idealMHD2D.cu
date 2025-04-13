@@ -8,11 +8,7 @@
 #include "idealMHD2D.hpp"
 
 
-IdealMHD2D::IdealMHD2D(
-    MPIInfo& mPIInfo, 
-    std::string MTXFilename, 
-    std::string jsonFilenameForSolver
-)
+IdealMHD2D::IdealMHD2D(MPIInfo& mPIInfo)
     : mPIInfo(mPIInfo), 
 
       fluxSolver(mPIInfo), 
@@ -29,7 +25,7 @@ IdealMHD2D::IdealMHD2D(
       dtVector(mPIInfo.localNx * mPIInfo.localNy), 
 
       boundary(mPIInfo), 
-      projection(mPIInfo, MTXFilename, jsonFilenameForSolver)
+      projection(mPIInfo)
 {
 
     cudaMalloc(&device_mPIInfo, sizeof(MPIInfo));
@@ -130,7 +126,6 @@ void IdealMHD2D::oneStepRK2(
                        (mPIInfo.localSizeY + threadsPerBlock.y - 1) / threadsPerBlock.y);
     
     thrust::copy(U.begin(), U.end(), UBar.begin());
-    cudaDeviceSynchronize();
 
     calculateDt();
 
@@ -168,14 +163,11 @@ void IdealMHD2D::oneStepRK2(
     boundary.periodicBoundaryY2nd_U(U);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (step % 1 == 0) {
-        projection.correctB(U); 
-
-        sendrecv_U(U, mPIInfo);
-        boundary.periodicBoundaryX2nd_U(U);
-        boundary.periodicBoundaryY2nd_U(U);
-        MPI_Barrier(MPI_COMM_WORLD);
-    }
+    projection.correctB(U); 
+    sendrecv_U(U, mPIInfo);
+    boundary.periodicBoundaryX2nd_U(U);
+    boundary.periodicBoundaryY2nd_U(U);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 

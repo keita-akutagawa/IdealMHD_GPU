@@ -9,12 +9,8 @@
 //
 
 
-Projection::Projection(
-    MPIInfo& mPIInfo, 
-    std::string MTXfilename, 
-    std::string jsonFilenameForSolver
-)
-    : mPIInfo(mPIInfo), 
+Projection::Projection(MPIInfo& mPIInfo)
+    : mPIInfo(mPIInfo),
       
       //今のところは各プロセスが全領域を持っていて、ランク0だけが解くことにする
       divB(nx * ny), 
@@ -22,17 +18,13 @@ Projection::Projection(
       psi(nx * ny)
 {
     AMGX_initialize();
-
     AMGX_config_create_from_file(&config, jsonFilenameForSolver.c_str());
     AMGX_resources_create_simple(&resource, config);
     AMGX_solver_create(&solver, resource, AMGX_mode_dDDI, config);
-
     AMGX_matrix_create(&A, resource, AMGX_mode_dDDI);
     AMGX_vector_create(&amgx_sol, resource, AMGX_mode_dDDI);
     AMGX_vector_create(&amgx_rhs, resource, AMGX_mode_dDDI);
-
     AMGX_read_system(A, amgx_sol, amgx_rhs, MTXfilename.c_str());
-
     AMGX_solver_setup(solver, A);
 }
 
@@ -68,7 +60,6 @@ __global__ void calculateDivB_kernel(
         
         divB[indexForDivB] = (U[index + localSizeY].bX - U[index - localSizeY].bX) / (2.0 * device_dx)
                            + (U[index + 1].bY - U[index - 1].bY) / (2.0 * device_dy);
-        divB[indexForDivB] = -1.0 * divB[indexForDivB]; //正定値行列問題にするため、符号を反転させる。
     }
 }
 
@@ -87,11 +78,17 @@ __global__ void correctDivB_kernel(
     if (i < localNx && j < localNy) {
         int index = j + buffer
                   + (i + buffer) * localSizeY;
-        int indexForPsi = j + localNy * localGridY
-                        + (i + localNx * localGridX) * device_ny; 
+        int indexForPsiLeft  = j + localNy * localGridY
+                             + ((i - 1 + localNx * localGridX + device_nx) % device_nx) * device_ny; 
+        int indexForPsiRight = j + localNy * localGridY
+                             + ((i + 1 + localNx * localGridX + device_nx) % device_nx) * device_ny; 
+        int indexForPsiDown  = (j - 1 + localNy * localGridY + device_ny) % device_ny
+                             + (i + localNx * localGridX) * device_ny; 
+        int indexForPsiUp    = (j + 1 + localNy * localGridY + device_ny) % device_ny
+                             + (i + localNx * localGridX) * device_ny; 
         
-        U[index].bX -= (psi[indexForPsi + device_ny] - psi[indexForPsi - device_ny]) / (2.0 * device_dx);
-        U[index].bY -= (psi[indexForPsi + 1] - psi[indexForPsi - 1]) / (2.0 * device_dy);
+        U[index].bX += (psi[indexForPsiRight] - psi[indexForPsiLeft]) / (2.0 * device_dx);
+        U[index].bY += (psi[indexForPsiUp] - psi[indexForPsiDown]) / (2.0 * device_dy);
     }
 }
 
@@ -101,6 +98,7 @@ void Projection::correctB(
     thrust::device_vector<ConservationParameter>& U
 )
 {
+
     dim3 threadsPerBlock(16, 16);
     dim3 blocksPerGrid((mPIInfo.localNx + threadsPerBlock.x - 1) / threadsPerBlock.x,
                        (mPIInfo.localNy + threadsPerBlock.y - 1) / threadsPerBlock.y);
@@ -114,6 +112,7 @@ void Projection::correctB(
     );
     cudaDeviceSynchronize();
 
+    thrust::fill(sum_divB.begin(), sum_divB.end(), 0.0);
     MPI_Reduce(thrust::raw_pointer_cast(divB.data()), thrust::raw_pointer_cast(sum_divB.data()), nx * ny, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (mPIInfo.rank == 0) {
@@ -132,5 +131,4 @@ void Projection::correctB(
     );
     cudaDeviceSynchronize();
 }
-
 

@@ -42,11 +42,7 @@ private:
 
 
 public: 
-    Projection(
-        MPIInfo& mPIInfo, 
-        std::string MTXfilename, 
-        std::string jsonFilenameForSolver
-    ); 
+    Projection(MPIInfo& mPIInfo); 
 
     ~Projection(); 
 

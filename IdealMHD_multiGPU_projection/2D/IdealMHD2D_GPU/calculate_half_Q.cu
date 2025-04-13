@@ -7,6 +7,7 @@ CalculateHalfQ::CalculateHalfQ(MPIInfo& mPIInfo)
 {
 }
 
+
 __global__ void getBasicParamter_kernel(
     const ConservationParameter* U, 
     BasicParameter* dQ, 
@@ -20,15 +21,13 @@ __global__ void getBasicParamter_kernel(
     if (i < localSizeX - 1 && j < localSizeY - 1) {
 
         double rho, u, v, w, bX, bY, bZ, e, p;
-        double bXPlus1;
         int index = j + i * localSizeY;
 
         rho     = U[index].rho;
         u       = U[index].rhoU / rho;
         v       = U[index].rhoV / rho;
         w       = U[index].rhoW / rho;
-        bX      = U[index].bX;
-        bXPlus1 = U[index + shiftForNeighbor].bX; // flux計算でx, y方向使いまわすため
+        bX      = 0.5 * (U[index].bX + U[index + shiftForNeighbor].bX); // flux計算でx, y方向使いまわすため
         bY      = U[index].bY;
         bZ      = U[index].bZ;
         e       = U[index].e;
@@ -40,12 +39,13 @@ __global__ void getBasicParamter_kernel(
         dQ[index].u   = u;
         dQ[index].v   = v;
         dQ[index].w   = w;
-        dQ[index].bX  = 0.5 * (bX + bXPlus1); //HLLDではBxは中心のものを使うため
+        dQ[index].bX  = bX; //HLLDではBxは中心のものを使うため
         dQ[index].bY  = bY;
         dQ[index].bZ  = bZ;
         dQ[index].p   = p;
     }
 }
+
 
 void CalculateHalfQ::setPhysicalParameterX(
     const thrust::device_vector<ConservationParameter>& U, 
@@ -117,5 +117,3 @@ void CalculateHalfQ::calculateRightQY(
 { 
     muscl.getRightQY(dQCenter, dQRight);
 }
-
-
