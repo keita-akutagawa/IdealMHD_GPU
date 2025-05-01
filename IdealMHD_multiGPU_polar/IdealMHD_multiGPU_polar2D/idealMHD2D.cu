@@ -220,7 +220,8 @@ void IdealMHD2D::oneStepRK2_symmetricXperiodicY()
     );
     cudaDeviceSynchronize();
 
-    boundary.symmetricBoundaryX2nd_U(UBar);
+    boundary.wallBoundaryXLeft2nd_U(UBar);
+    boundary.symmetricBoundaryXRight2nd_U(UBar);
     boundary.periodicBoundaryY2nd_U(UBar);
     
     shiftUToCenterForCT(UBar);
@@ -241,12 +242,14 @@ void IdealMHD2D::oneStepRK2_symmetricXperiodicY()
     );
     cudaDeviceSynchronize();
 
-    boundary.symmetricBoundaryX2nd_U(U);
+    boundary.wallBoundaryXLeft2nd_U(U);
+    boundary.symmetricBoundaryXRight2nd_U(U);
     boundary.periodicBoundaryY2nd_U(U);
 
     ct.divBClean(bXOld, bYOld, U);
 
-    boundary.symmetricBoundaryX2nd_U(U);
+    boundary.wallBoundaryXLeft2nd_U(U);
+    boundary.symmetricBoundaryXRight2nd_U(U);
     boundary.periodicBoundaryY2nd_U(U);
 }
 
@@ -261,7 +264,7 @@ __global__ void calculateSourceTerm_kernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (i < localSizeX && j < localSizeY) {
+    if (i < localSizeX && 0 < j && j < localSizeY) {
         int index = j + i * localSizeY;
         double x = localNx * localGridX + (i - buffer) * device_dx + device_xmin; 
 
