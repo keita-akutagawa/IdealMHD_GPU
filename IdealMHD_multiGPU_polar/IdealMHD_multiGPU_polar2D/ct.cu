@@ -62,9 +62,9 @@ __global__ void CT_kernel(
         double x = localNx * localGridX + (i - buffer) * device_dx + device_xmin; 
 
         U[index].bX = bXOld[index]
-                    + device_dt / x / device_dy * (eZVector[index] - eZVector[index - 1]);
+                    - device_dt / x / device_dy * (eZVector[index] - eZVector[index - 1]);
         U[index].bY = bYOld[index]
-                    - device_dt / device_dx * (eZVector[index] - eZVector[index - localSizeY]);
+                    + device_dt / device_dx * (eZVector[index] - eZVector[index - localSizeY]);
     }
 }
 

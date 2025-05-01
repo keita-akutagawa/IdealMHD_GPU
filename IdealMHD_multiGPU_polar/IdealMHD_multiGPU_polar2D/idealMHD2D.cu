@@ -270,7 +270,7 @@ __global__ void calculateSourceTerm_kernel(
         sourceTerm[index].s2 = -0.5 * (fluxF[index].f2 - fluxF[index - localSizeY].f2) / x;
         sourceTerm[index].s3 = 0.0;
         sourceTerm[index].s4 = 0.0;
-        sourceTerm[index].s5 = 0.5 * (fluxF[index].f5 + fluxF[index - localSizeY].f5) / x;
+        sourceTerm[index].s5 = -0.5 * (fluxF[index].f5 + fluxF[index - localSizeY].f5) / x;
         sourceTerm[index].s6 = 0.0;
         sourceTerm[index].s7 = 0.0;
     }
